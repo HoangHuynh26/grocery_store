@@ -17,12 +17,15 @@ export default function AiAssistantPage() {
 
   const samplePrompts = [
     'Doanh thu hôm nay bao nhiêu?',
-    'Doanh thu tháng này thế nào?',
-    'Hôm qua có bao nhiêu hóa đơn?',
-    'Sản phẩm nào bán chạy nhất tháng này?',
-    'Coca Cola bán được bao nhiêu lon?',
-    'Kiểm tra mặt hàng sắp hết',
-    'Dự đoán doanh thu tháng tới?'
+    'Hôm nay bán được bao nhiêu tiền?',
+    'Giá của Coca Cola là bao nhiêu?',
+    'Còn bao nhiêu lon Coca?',
+    'Sản phẩm nào bán chạy nhất?',
+    'Những mặt hàng nào sắp hết?',
+    'Có những danh mục nào?',
+    'Cửa hàng có bao nhiêu sản phẩm?',
+    'Dự đoán doanh thu tháng tới?',
+    'Hướng dẫn sử dụng'
   ];
 
   const scrollToBottom = () => {
@@ -44,25 +47,27 @@ export default function AiAssistantPage() {
 
     try {
       const res = await api.post('/ai/chat', { message: text, sessionId });
-      if (res.data) {
-        if (!sessionId && res.data.sessionId) {
-          setSessionId(res.data.sessionId);
-        }
-        const botMsg = {
-          id: String(Date.now() + 1),
-          role: 'assistant',
-          content: res.data.reply,
-          toolUsed: res.data.toolUsed
-        };
-        setMessages((prev) => [...prev, botMsg]);
+      const replyContent = res?.data?.reply || res?.reply || (typeof res?.data === 'string' ? res.data : 'Đã nhận câu trả lời.');
+      const toolUsed = res?.data?.toolUsed || res?.toolUsed || null;
+      const returnedSessionId = res?.data?.sessionId || res?.sessionId;
+      if (returnedSessionId && !sessionId) {
+        setSessionId(returnedSessionId);
       }
+
+      const botMsg = {
+        id: String(Date.now() + 1),
+        role: 'assistant',
+        content: replyContent,
+        toolUsed
+      };
+      setMessages((prev) => [...prev, botMsg]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
         {
           id: String(Date.now() + 1),
           role: 'assistant',
-          content: 'Xin lỗi, không thể xử lý câu hỏi lúc này. Vui lòng kiểm tra lại kết nối.'
+          content: err?.message ? `⚠️ ${err.message}` : 'Xin lỗi, không thể xử lý câu hỏi lúc này. Vui lòng kiểm tra lại kết nối.'
         }
       ]);
     } finally {
