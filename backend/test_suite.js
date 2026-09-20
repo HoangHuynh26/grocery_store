@@ -213,14 +213,35 @@ async function runTests() {
     headers: { Authorization: `Bearer ${adminToken}` },
     body: JSON.stringify({ message: 'Doanh thu hôm nay bao nhiêu?' })
   });
-  assert(chat1.status === 200 && chat1.data.data.reply.includes('Doanh thu:'), 'AI Assistant answered today revenue query');
+  assert(chat1.status === 200 && chat1.data.data.reply.includes('Doanh thu'), 'AI Assistant answered today revenue query');
+
+  const chatPrice = await request('/ai/chat', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ message: 'Giá của Coca Cola là bao nhiêu?' })
+  });
+  assert(chatPrice.status === 200 && chatPrice.data.data.reply.includes('Coca Cola'), 'AI Assistant answered specific product price inquiry');
+
+  const chatStoreCount = await request('/ai/chat', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ message: 'Cửa hàng có bao nhiêu sản phẩm?' })
+  });
+  assert(chatStoreCount.status === 200 && chatStoreCount.data.data.reply.includes('mặt hàng'), 'AI Assistant answered store product count inquiry');
+
+  const chatCat = await request('/ai/chat', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ message: 'Có những danh mục nào?' })
+  });
+  assert(chatCat.status === 200 && chatCat.data.data.reply.includes('DANH MỤC'), 'AI Assistant answered categories inquiry');
 
   const chat2 = await request('/ai/chat', {
     method: 'POST',
     headers: { Authorization: `Bearer ${adminToken}` },
     body: JSON.stringify({ message: 'Dự đoán doanh thu tháng tới?' })
   });
-  assert(chat2.status === 200 && chat2.data.data.reply.includes('Dự báo doanh thu'), 'AI Assistant answered revenue forecast query');
+  assert(chat2.status === 200 && chat2.data.data.reply.includes('DỰ BÁO DOANH THU'), 'AI Assistant answered revenue forecast query');
 
   // TEST 9: AI Product Auto-Classification
   console.log('\n[9] Testing AI Product Auto-Classification Engine...');

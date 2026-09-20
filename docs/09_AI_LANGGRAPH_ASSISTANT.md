@@ -60,20 +60,28 @@ Ngăn chặn hoàn toàn lỗi lệch ngày do múi giờ server trên Cloud (Re
 
 ## 4. Danh Mục Công Cụ (Agent Tools - `tools.js`)
 
-1. **`get_revenue_analytics`**:
-   - Tham số: `startDate`, `endDate`.
-   - Kết quả: Doanh thu thực tế, số đơn hàng, giá trị đơn trung bình (AOV).
-2. **`get_inventory_status`**:
+1. **`searchProduct`**:
+   - Tham số: `keyword` (Tên hoặc mã SKU sản phẩm).
+   - Kết quả: Bảng giá chi tiết, số lượng tồn kho thực tế, tình trạng (Đủ hàng / Sắp hết / Hết hàng), đơn vị tính, danh mục.
+2. **`getStoreSummary`**:
+   - Thống kê toàn diện: Tổng số mặt hàng, tổng số lượng tồn, tổng giá trị vốn kho, số hàng sắp hết, số danh mục, số nhân viên, doanh thu và đơn hàng hôm nay.
+3. **`getCategoriesWithProducts`**:
+   - Tham số: `categoryName` (Tùy chọn).
+   - Kết quả: Danh sách toàn bộ danh mục kèm số lượng sản phẩm, hoặc chi tiết các sản phẩm trong một danh mục cụ thể.
+4. **`getRevenue`**:
+   - Tham số: `dateRangeText` (Hôm nay, hôm qua, tháng này, ngày X...).
+   - Kết quả: Doanh thu thực tế, số đơn hàng hoàn thành, tổng sản phẩm bán ra, giá trị trung bình/đơn.
+5. **`getInventory`**:
    - Tham số: `lowStockOnly` (boolean).
-   - Kết quả: Danh sách sản phẩm tồn kho ít hơn ngưỡng cảnh báo `min_stock_alert`.
-3. **`get_top_products`**:
+   - Kết quả: Danh sách các mặt hàng chạm ngưỡng tồn kho tối thiểu cần nhập bổ sung.
+6. **`getProductSales`**:
+   - Tham số: `productName`, `dateRangeText`.
+   - Kết quả: Chi tiết số lượng đã bán và doanh thu của một mặt hàng cụ thể.
+7. **`getTopProducts`**:
    - Tham số: `limit` (số lượng mặt hàng, mặc định 5).
-   - Kết quả: Danh sách các món bán chạy nhất kèm số lượng và doanh thu.
-4. **`get_revenue_forecast`**:
+   - Kết quả: Top các sản phẩm bán chạy nhất trong kỳ.
+8. **`getForecast`**:
    - Kết nối trực tiếp với mô hình Machine Learning Holt-Winters để trả lời câu hỏi: *"Dự đoán tháng tới cửa hàng bán được bao nhiêu?"*.
-5. **`get_recent_invoices`**:
-   - Tham số: `limit`.
-   - Kết quả: Các hóa đơn vừa phát sinh gần nhất kèm tên thu ngân và tổng tiền.
 
 ---
 
@@ -81,8 +89,15 @@ Ngăn chặn hoàn toàn lỗi lệch ngày do múi giờ server trên Cloud (Re
 
 Trang [AiAssistantPage.jsx](file:///c:/grocery_store/frontend/src/pages/AiAssistantPage.jsx):
 - Hỗ trợ các nút gợi ý câu hỏi một chạm (Quick Prompts):
-  - *"Hôm nay doanh thu thế nào?"*
-  - *"Sản phẩm nào sắp hết hàng trong kho?"*
-  - *"Dự đoán doanh thu tháng tới bằng AI?"*
-  - *"Top 5 sản phẩm bán chạy nhất?"*
+  - *"Doanh thu hôm nay bao nhiêu?"*
+  - *"Hôm nay bán được bao nhiêu tiền?"*
+  - *"Giá của Coca Cola là bao nhiêu?"*
+  - *"Còn bao nhiêu lon Coca?"*
+  - *"Sản phẩm nào bán chạy nhất?"*
+  - *"Những mặt hàng nào sắp hết?"*
+  - *"Có những danh mục nào?"*
+  - *"Cửa hàng có bao nhiêu sản phẩm?"*
+  - *"Dự đoán doanh thu tháng tới?"*
+  - *"Hướng dẫn sử dụng"*
 - Hiển thị Markdown trực quan, tự động làm nổi bật các con số tài chính (VND) và ngày tháng.
+- Cơ chế bắt lỗi và hiển thị phản hồi chuẩn xác ngay cả khi mất kết nối.
