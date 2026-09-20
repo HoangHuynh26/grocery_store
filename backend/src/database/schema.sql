@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS login_logs (
     user_agent TEXT,
     status VARCHAR(20) NOT NULL CHECK (status IN ('SUCCESS', 'FAILED')),
     failure_reason TEXT,
+    location_region VARCHAR(100),
+    location_city VARCHAR(100),
+    location_country VARCHAR(50),
+    location_details JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -219,3 +223,10 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 
 CREATE INDEX IF NOT EXISTS idx_login_logs_created ON login_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_login_logs_user ON login_logs(user_id);
+
+-- Geolocation columns migration for login_logs
+ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_region VARCHAR(100);
+ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_city VARCHAR(100);
+ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_country VARCHAR(50);
+ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_details JSONB;
+

@@ -103,12 +103,37 @@ async function listUsers({ page = 1, limit = 20, search = '' }) {
   };
 }
 
-async function recordLoginLog({ userId, username, ipAddress, userAgent, status, failureReason }) {
+async function recordLoginLog({
+  userId,
+  username,
+  ipAddress,
+  userAgent,
+  status,
+  failureReason,
+  locationRegion = null,
+  locationCity = null,
+  locationCountry = null,
+  locationDetails = null
+}) {
   const sql = `
-    INSERT INTO login_logs (user_id, username, ip_address, user_agent, status, failure_reason, created_at)
-    VALUES ($1, $2, $3, $4, $5, $6, NOW());
+    INSERT INTO login_logs (
+      user_id, username, ip_address, user_agent, status, failure_reason,
+      location_region, location_city, location_country, location_details, created_at
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW());
   `;
-  await query(sql, [userId, username, ipAddress, userAgent, status, failureReason]);
+  await query(sql, [
+    userId,
+    username,
+    ipAddress,
+    userAgent,
+    status,
+    failureReason,
+    locationRegion,
+    locationCity,
+    locationCountry,
+    locationDetails ? JSON.stringify(locationDetails) : null
+  ]);
 }
 
 async function getLoginLogs({ limit = 30 }) {

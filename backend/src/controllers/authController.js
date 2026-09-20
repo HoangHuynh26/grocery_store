@@ -3,17 +3,21 @@ const { verifyPassword } = require('../utils/password');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/jwt');
 const { createAuditLog } = require('../repositories/auditRepository');
 const { AppError } = require('../middleware/errorHandler');
+const { extractClientIp, lookupIpLocation } = require('../utils/ipGeo');
 
 class AuthController {
   static async login(req, res, next) {
     const { identifier, password } = req.body;
-    const clientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const clientIp = extractClientIp(req);
     const userAgent = req.headers['user-agent'] || '';
 
     try {
       if (!identifier || !password) {
         throw new AppError('Vui lòng nhập tên đăng nhập/email và mật khẩu.', 400, 'MISSING_CREDENTIALS');
       }
+
+      // Lookup IP location (asynchronous with cache & failover)
+      const geoInfo = await lookupIpLocation(clientIp);
 
       const user = await findByUsernameOrEmail(identifier);
       if (!user) {
@@ -23,7 +27,11 @@ class AuthController {
           ipAddress: clientIp,
           userAgent,
           status: 'FAILED',
-          failureReason: 'Tài khoản không tồn tại'
+          failureReason: 'Tài khoản không tồn tại',
+          locationRegion: geoInfo.region,
+          locationCity: geoInfo.city,
+          locationCountry: geoInfo.country,
+          locationDetails: geoInfo.details
         });
         throw new AppError('Tài khoản hoặc mật khẩu không chính xác.', 401, 'INVALID_CREDENTIALS');
       }
@@ -35,7 +43,11 @@ class AuthController {
           ipAddress: clientIp,
           userAgent,
           status: 'FAILED',
-          failureReason: 'Tài khoản đã bị tạm khóa'
+          failureReason: 'Tài khoản đã bị tạm khóa',
+          locationRegion: geoInfo.region,
+          locationCity: geoInfo.city,
+          locationCountry: geoInfo.country,
+          locationDetails: geoInfo.details
         });
         throw new AppError('Tài khoản đã bị tạm khóa. Vui lòng liên hệ Quản trị viên.', 403, 'ACCOUNT_LOCKED');
       }
@@ -48,19 +60,27 @@ class AuthController {
           ipAddress: clientIp,
           userAgent,
           status: 'FAILED',
-          failureReason: 'Mật khẩu sai'
+          failureReason: 'Mật khẩu sai',
+          locationRegion: geoInfo.region,
+          locationCity: geoInfo.city,
+          locationCountry: geoInfo.country,
+          locationDetails: geoInfo.details
         });
         throw new AppError('Tài khoản hoặc mật khẩu không chính xác.', 401, 'INVALID_CREDENTIALS');
       }
 
-      // Record successful login
+      // Record successful login with geolocation
       await recordLoginLog({
         userId: user.id,
         username: user.username,
         ipAddress: clientIp,
         userAgent,
         status: 'SUCCESS',
-        failureReason: null
+        failureReason: null,
+        locationRegion: geoInfo.region,
+        locationCity: geoInfo.city,
+        locationCountry: geoInfo.country,
+        locationDetails: geoInfo.details
       });
 
       const tokenPayload = {
@@ -73,14 +93,19 @@ class AuthController {
       const accessToken = generateAccessToken(tokenPayload);
       const refreshToken = generateRefreshToken(tokenPayload);
 
-      // Audit Log
+      // Audit Log with location context
       await createAuditLog({
         userId: user.id,
         action: 'LOGIN',
         entityType: 'USER',
         entityId: user.id,
-        newValues: { username: user.username, role: user.role },
-        reason: 'Đăng nhập thành công vào hệ thống POS',
+        newValues: {
+          username: user.username,
+          role: user.role,
+          location: geoInfo.locationText,
+          isLocal: geoInfo.isLocal
+        },
+        reason: `Đăng nhập thành công từ [${clientIp}] - ${geoInfo.locationText}`,
         ipAddress: clientIp,
         userAgent
       });
@@ -105,7 +130,16 @@ class AuthController {
             role: user.role
           },
           accessToken,
-          refreshToken
+          refreshToken,
+          clientLocation: {
+            ip: clientIp,
+            region: geoInfo.region,
+            city: geoInfo.city,
+            country: geoInfo.country,
+            locationText: geoInfo.locationText,
+            flag: geoInfo.flag,
+            isLocal: geoInfo.isLocal
+          }
         },
         message: 'Đăng nhập thành công.'
       });
@@ -146,7 +180,7 @@ class AuthController {
 
   static async logout(req, res, next) {
     try {
-      const clientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const clientIp = extractClientIp(req);
       const userAgent = req.headers['user-agent'] || '';
 
       if (req.user) {
