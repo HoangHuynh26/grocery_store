@@ -168,10 +168,7 @@ export default function AuditLogsPage() {
           maxWidth="640px"
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '10px',
+            <div className="form-grid-2" style={{
               padding: '12px',
               backgroundColor: 'var(--bg-card-secondary)',
               borderRadius: 'var(--radius-md)'

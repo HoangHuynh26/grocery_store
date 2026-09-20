@@ -363,13 +363,13 @@ export default function ProductsPage() {
           <thead>
             <tr>
               <th style={{ width: '68px' }}>Hình Ảnh</th>
-              <th>Mã SP</th>
+              <th className="hide-mobile">Mã SP</th>
               <th>Tên Sản Phẩm</th>
-              <th>Danh Mục</th>
-              <th>Giá Vốn</th>
+              <th className="hide-mobile">Danh Mục</th>
+              <th className="hide-mobile">Giá Vốn</th>
               <th>Giá Bán</th>
               <th>Tồn Kho</th>
-              <th>Mã QR</th>
+              <th className="hide-mobile">Mã QR</th>
               <th style={{ textAlign: 'right' }}>Thao Tác</th>
             </tr>
           </thead>
@@ -453,19 +453,27 @@ export default function ProductsPage() {
                         </div>
                       )}
                     </td>
-                    <td style={{ fontWeight: 600, fontFamily: 'monospace', color: 'var(--primary)' }}>
+                    <td className="hide-mobile" style={{ fontWeight: 600, fontFamily: 'monospace', color: 'var(--primary)' }}>
                       {p.product_code}
                     </td>
                     <td>
                       <div style={{ fontWeight: 600 }}>{p.name}</div>
+                      <div className="show-mobile-only" style={{ fontSize: '11px', color: 'var(--primary)', fontFamily: 'monospace', marginTop: '2px' }}>
+                        {p.product_code}
+                      </div>
+                      {p.category_name && (
+                        <div className="show-mobile-only" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {p.category_name}
+                        </div>
+                      )}
                       {p.description && (
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{p.description}</div>
+                        <div className="hide-mobile" style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{p.description}</div>
                       )}
                     </td>
-                    <td style={{ color: 'var(--text-secondary)' }}>
+                    <td className="hide-mobile" style={{ color: 'var(--text-secondary)' }}>
                       {p.category_name || '-'}
                     </td>
-                    <td style={{ color: 'var(--text-muted)' }}>
+                    <td className="hide-mobile" style={{ color: 'var(--text-muted)' }}>
                       {formatCurrency(p.cost_price)}
                     </td>
                     <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -476,7 +484,7 @@ export default function ProductsPage() {
                         {p.stock_quantity} {p.unit}
                       </span>
                     </td>
-                    <td>
+                    <td className="hide-mobile">
                       {p.has_qr ? (
                         <button
                           type="button"
@@ -488,7 +496,7 @@ export default function ProductsPage() {
                           <span>Xem QR</span>
                         </button>
                       ) : (
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Không có QR</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Không QR</span>
                       )}
                     </td>
                     <td style={{ textAlign: 'right' }}>

@@ -133,10 +133,10 @@ export default function AdminsPage() {
             <thead>
               <tr>
                 <th>Họ & Tên</th>
-                <th>Tên Đăng Nhập</th>
-                <th>Email</th>
-                <th>Số Điện Thoại</th>
-                <th>Vai Trò (Role)</th>
+                <th className="hide-mobile">Tên Đăng Nhập</th>
+                <th className="hide-mobile">Email</th>
+                <th className="hide-mobile">Số Điện Thoại</th>
+                <th>Vai Trò</th>
                 <th>Trạng Thái</th>
                 <th style={{ textAlign: 'right' }}>Thao Tác</th>
               </tr>
@@ -158,10 +158,15 @@ export default function AdminsPage() {
               ) : (
                 users.map((u) => (
                   <tr key={u.id}>
-                    <td style={{ fontWeight: 600 }}>{u.full_name}</td>
-                    <td style={{ fontFamily: 'monospace', color: 'var(--primary)' }}>@{u.username}</td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{u.email}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{u.phone || '-'}</td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{u.full_name}</div>
+                      <div className="show-mobile-only" style={{ fontSize: '11px', color: 'var(--primary)', fontFamily: 'monospace', marginTop: '2px' }}>
+                        @{u.username} • {u.email}
+                      </div>
+                    </td>
+                    <td className="hide-mobile" style={{ fontFamily: 'monospace', color: 'var(--primary)' }}>@{u.username}</td>
+                    <td className="hide-mobile" style={{ color: 'var(--text-secondary)' }}>{u.email}</td>
+                    <td className="hide-mobile" style={{ color: 'var(--text-muted)' }}>{u.phone || '-'}</td>
                     <td>
                       <span className={`badge ${u.role === 'SUPER_ADMIN' ? 'badge-primary' : (u.role === 'ADMIN' ? 'badge-info' : 'badge-secondary')}`}>
                         {u.role}
