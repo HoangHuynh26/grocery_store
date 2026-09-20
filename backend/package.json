@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node src/server.js",
-    "test": "node test_suite.js"
+    "test": "node test_suite.js",
+    "db:neon:init": "node scripts/setup_neon.js"
   },
   "keywords": [],
   "author": "",

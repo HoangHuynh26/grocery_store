@@ -10,16 +10,33 @@ async function getDb() {
   if (pool) return { type: 'pg', client: pool };
   if (pgliteInstance) return { type: 'pglite', client: pgliteInstance };
 
-  if (config.databaseUrl && config.databaseUrl.startsWith('postgres')) {
+  if (config.databaseUrl && (config.databaseUrl.startsWith('postgres://') || config.databaseUrl.startsWith('postgresql://'))) {
     const { Pool } = require('pg');
+
+    // Neon PostgreSQL and Cloud PostgreSQL require SSL encryption
+    const isNeon = config.databaseUrl.includes('neon.tech') || 
+                   config.databaseUrl.includes('sslmode=require') || 
+                   config.databaseUrl.includes('ssl=true');
+    const sslConfig = (isNeon || process.env.NODE_ENV === 'production') 
+      ? { rejectUnauthorized: false } 
+      : false;
+
     pool = new Pool({
       connectionString: config.databaseUrl,
+      ssl: sslConfig,
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 10000,
     });
+    
+    // Test pool error listener
+    pool.on('error', (err) => {
+      console.error('[Database Pool Error]:', err.message);
+    });
+
     isEmbedded = false;
-    console.log('[Database] Connected to external PostgreSQL via pg.Pool');
+    const isNeonLabel = isNeon ? ' (Neon Serverless PostgreSQL)' : '';
+    console.log(`[Database] Connected to external PostgreSQL${isNeonLabel}`);
     return { type: 'pg', client: pool };
   } else {
     const { PGlite } = require('@electric-sql/pglite');
@@ -30,7 +47,7 @@ async function getDb() {
     pgliteInstance = new PGlite(dataDir);
     await pgliteInstance.waitReady;
     isEmbedded = true;
-    console.log(`[Database] Initialized persistent PostgreSQL engine at ${dataDir}`);
+    console.log(`[Database] DATABASE_URL not set. Running local database at ${dataDir}`);
     return { type: 'pglite', client: pgliteInstance };
   }
 }

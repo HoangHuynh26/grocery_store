@@ -1,8 +1,9 @@
-# 12. Hướng Dẫn Triển Khai Lên Render & Vercel (Production DevOps & Deployment)
+# 12. Hướng Dẫn Triển Khai Lên Neon, Render & Vercel (Production DevOps & Deployment)
 
-Hệ thống được thiết kế theo kiến trúc tách rời (**Decoupled Client-Server**), cho phép triển khai tối ưu chi phí và hiệu năng:
-- **Backend & Cơ sở dữ liệu PostgreSQL**: Triển khai trên nền tảng **Render**.
-- **Frontend React SPA**: Triển khai trên mạng phân phối toàn cầu **Vercel Edge Network**.
+Hệ thống được thiết kế theo kiến trúc tối ưu hiệu năng và độ ổn định cao:
+- **Cơ sở dữ liệu (Database)**: Triển khai trên **Neon Serverless PostgreSQL** (https://neon.tech - Tốc độ cao, tự động scale, kết nối SSL, không phụ thuộc Docker).
+- **Máy chủ ứng dụng (Backend)**: Triển khai trên **Render Web Service** (Node.js runtime, kết nối trực tiếp đến Neon).
+- **Giao diện người dùng (Frontend)**: Triển khai trên **Vercel Edge Network** (Global CDN, chứng chỉ SSL/HTTPS tự động).
 
 ---
 
@@ -17,63 +18,81 @@ graph LR
 
     subgraph RenderCloud ["☁️ Render Cloud Platform"]
         WebService["🚀 Backend Node.js Web Service (grocery-pos-backend)"]
-        ManagedDB[("🗄️ PostgreSQL Database (grocery-pos-db)")]
+    end
+
+    subgraph NeonCloud ["⚡ Neon Serverless PostgreSQL (neon.tech)"]
+        NeonDB[("🗄️ Neon Cloud PostgreSQL (neondb)")]
     end
 
     Users["📱 Người Dùng (Mobile / Desktop)"] -->|1. Tải HTML/JS/CSS (Siêu Nhanh)| VercelCloud
     SPA -->|2. Gọi REST API & WebSockets| WebService
-    WebService -->|3. Kết nối an toàn (SSL)| ManagedDB
+    WebService -->|3. Kết nối an toàn (SSL / Pooler)| NeonDB
 ```
 
 ---
 
-## 2. Triển Khai Backend & Database Lên Render
+## 2. Khởi Tạo Cơ Sở Dữ Liệu Neon (https://neon.tech)
 
-Hệ thống đã cấu hình sẵn bản thiết kế Blueprint [render.yaml](file:///c:/grocery_store/render.yaml) ở thư mục gốc:
+Hệ thống cung cấp sẵn file [database.sql](file:///c:/grocery_store/database.sql) độc lập hoàn chỉnh:
 
 ### Các bước thực hiện:
-1. Đăng nhập vào [Render Dashboard](https://dashboard.render.com).
-2. Chọn **Blueprints** -> Nhấn **New Blueprint Instance**.
-3. Chọn kho lưu trữ GitHub `HoangHuynh26/grocery_store`.
-4. Render sẽ tự động phát hiện file `render.yaml` và khởi tạo song song 2 dịch vụ:
-   - **PostgreSQL Database**: `grocery-pos-db` (PostgreSQL 16).
-   - **Web Service**: `grocery-pos-backend` (Node.js runtime).
-5. Tự động liên kết chuỗi kết nối `DATABASE_URL` từ Database sang Web Service.
-
-### Danh sách biến môi trường Backend trên Render:
-| Tên Biến Môi Trường | Giá Trị Mẫu | Mô Tả |
-|:---|:---|:---|
-| `NODE_ENV` | `production` | Bật chế độ tối ưu hiệu năng Node.js |
-| `PORT` | `5000` | Cổng dịch vụ lắng nghe |
-| `DATABASE_URL` | *(Render tự cấp)* | Chuỗi kết nối cơ sở dữ liệu PostgreSQL |
-| `JWT_SECRET` | *(Chuỗi ngẫu nhiên 64 ký tự)* | Khóa bí mật ký Access Token |
-| `JWT_REFRESH_SECRET` | *(Chuỗi ngẫu nhiên 64 ký tự)* | Khóa bí mật ký Refresh Token |
-| `CLIENT_URL` | `https://ten-du-an-cua-ban.vercel.app` | URL Frontend trên Vercel để cấu hình CORS |
-| `GEMINI_API_KEY` | *(Tùy chọn)* | Khóa API Google Gemini nếu muốn tăng cường AI |
+1. Đăng ký tài khoản miễn phí tại [Neon.tech](https://neon.tech).
+2. Tạo Project mới (chọn khu vực `AWS ap-southeast-1` - Singapore).
+3. Lấy chuỗi kết nối (Connection String) từ Neon Console:
+   ```text
+   postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+   ```
+4. **Nạp cấu trúc và dữ liệu mẫu**:
+   - Mở mục **SQL Editor** trên Neon Console.
+   - Mở file `database.sql`, copy toàn bộ và dán vào SQL Editor.
+   - Nhấn **RUN**. Toàn bộ bảng, ràng buộc chống âm kho, chỉ mục và tài khoản quản trị sẽ được khởi tạo trong 1 giây!
+   - Hoặc dán chuỗi kết nối vào `backend/.env` rồi chạy:
+     ```bash
+     cd backend
+     npm run db:neon:init
+     ```
 
 ---
 
-## 3. Triển Khai Frontend Lên Vercel
+## 3. Triển Khai Backend Lên Render (https://render.com)
 
-Hệ thống đã cấu hình sẵn file [frontend/vercel.json](file:///c:/grocery_store/frontend/vercel.json) để xử lý định tuyến SPA (tránh lỗi 404 khi tải lại các trang con như `/pos`, `/inventory`, `/analytics`):
+1. Đăng nhập vào [Render Dashboard](https://dashboard.render.com).
+2. Chọn **New +** -> **Web Service**.
+3. Chọn kho lưu trữ GitHub `HoangHuynh26/grocery_store`.
+4. Cấu hình dịch vụ:
+   - **Name**: `grocery-pos-backend`
+   - **Root Directory**: `backend`
+   - **Runtime**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+5. **Cấu hình Biến Môi Trường (Environment Variables)**:
+   | Tên Biến Môi Trường | Giá Trị Mẫu | Mô Tả |
+   |:---|:---|:---|
+   | `NODE_ENV` | `production` | Bật chế độ tối ưu hiệu năng Node.js |
+   | `PORT` | `5000` | Cổng dịch vụ lắng nghe |
+   | `DATABASE_URL` | *(Dán chuỗi kết nối Neon)* | Chuỗi kết nối PostgreSQL từ Neon Console |
+   | `JWT_SECRET` | *(Chuỗi ngẫu nhiên 64 ký tự)* | Khóa bí mật ký Access Token |
+   | `REFRESH_TOKEN_SECRET` | *(Chuỗi ngẫu nhiên 64 ký tự)* | Khóa bí mật ký Refresh Token |
+   | `CLIENT_URL` | `https://ten-du-an-cua-ban.vercel.app` | URL Frontend trên Vercel để cấu hình CORS |
 
-### Các bước thực hiện:
+---
+
+## 4. Triển Khai Frontend Lên Vercel (https://vercel.com)
+
 1. Đăng nhập vào [Vercel Dashboard](https://vercel.com).
-2. Nhấn **Add New Project** -> Chọn kho GitHub `HoangHuynh26/grocery_store`.
-3. Cấu hình cài đặt dự án (Project Settings):
-   - **Root Directory**: Chọn thư mục `frontend`.
-   - **Framework Preset**: Chọn `Vite`.
+2. Nhấn **Add New...** -> **Project** -> Chọn kho GitHub `HoangHuynh26/grocery_store`.
+3. Cấu hình:
+   - **Root Directory**: Chọn `frontend`.
+   - **Framework Preset**: `Vite`.
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
-4. Cấu hình Biến môi trường (Environment Variables):
-   - `VITE_API_URL`: Điền URL Backend Render vừa tạo (ví dụ: `https://grocery-pos-backend.onrender.com/api`).
-5. Nhấn **Deploy**. Sau khoảng 1 phút, Vercel sẽ cung cấp tên miền HTTPS miễn phí (ví dụ: `https://grocery-store.vercel.app`).
+4. Cấu hình Biến môi trường:
+   - `VITE_API_URL`: Điền URL Backend Render kèm `/api` (ví dụ: `https://grocery-pos-backend.onrender.com/api`).
+5. Nhấn **Deploy**.
 
 ---
 
-## 4. Kiểm Tra Sức Khỏe Sau Triển Khai (Post-Deployment Verification)
+## 5. Tài Khoản Quản Trị Mặc Định
 
-Sau khi hoàn tất, kiểm tra các điểm sau:
-1. **API Health Check**: Truy cập `https://<backend-render-url>/api/health` -> Kết quả trả về `{"status":"OK","database":"CONNECTED"}`.
-2. **Đăng nhập lần đầu**: Truy cập trang Vercel, đăng nhập bằng tài khoản Super Admin mặc định (`admin` / `Admin@123456`).
-3. **Đổi mật khẩu**: Tiến hành đổi mật khẩu mới cho tài khoản quản trị để đảm bảo an toàn tuyệt đối.
+- **Super Admin**: `admin` / `Admin@123456`
+- **Thu ngân**: `nhanvien1` / `Staff@123456`
