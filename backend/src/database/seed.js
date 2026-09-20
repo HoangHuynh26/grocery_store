@@ -57,7 +57,7 @@ async function seedDatabase() {
     catMap.set(res.rows[0].slug, res.rows[0].id);
   }
 
-  // 3. Create Products (With realistic codes, prices, stocks, and QR tokens)
+  // 3. Create Products (With realistic codes, prices, stocks, QR tokens and high quality images)
   const productsData = [
     {
       code: 'NUOC-COCA-330',
@@ -69,7 +69,8 @@ async function seedDatabase() {
       stock: 50,
       minStock: 10,
       unit: 'lon',
-      hasQr: true
+      hasQr: true,
+      imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop&q=80'
     },
     {
       code: 'NUOC-PEPSI-330',
@@ -81,7 +82,8 @@ async function seedDatabase() {
       stock: 45,
       minStock: 10,
       unit: 'lon',
-      hasQr: true
+      hasQr: true,
+      imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=500&auto=format&fit=crop&q=80'
     },
     {
       code: 'NUOC-AQUAFINA-500',
@@ -93,7 +95,8 @@ async function seedDatabase() {
       stock: 80,
       minStock: 15,
       unit: 'chai',
-      hasQr: true
+      hasQr: true,
+      imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=500&auto=format&fit=crop&q=80'
     },
     {
       code: 'MI-HAOHAO-001',
@@ -105,7 +108,8 @@ async function seedDatabase() {
       stock: 120,
       minStock: 20,
       unit: 'gói',
-      hasQr: true
+      hasQr: true,
+      imageUrl: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=500&auto=format&fit=crop&q=80'
     },
     {
       code: 'MI-OMACHI-SGB',
@@ -117,7 +121,8 @@ async function seedDatabase() {
       stock: 60,
       minStock: 15,
       unit: 'gói',
-      hasQr: true
+      hasQr: true,
+      imageUrl: 'https://images.unsplash.com/photo-1612927601601-6638404737ce?w=500&auto=format&fit=crop&q=80'
     },
     {
       code: 'SUA-VINAMILK-180',
@@ -129,7 +134,8 @@ async function seedDatabase() {
       stock: 35,
       minStock: 8,
       unit: 'lốc',
-      hasQr: true
+      hasQr: true,
+      imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&auto=format&fit=crop&q=80'
     },
     {
       code: 'BANH-CHOCORIE-01',
@@ -141,7 +147,8 @@ async function seedDatabase() {
       stock: 25,
       minStock: 5,
       unit: 'hộp',
-      hasQr: true
+      hasQr: true,
+      imageUrl: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=500&auto=format&fit=crop&q=80'
     },
     {
       code: 'SNACK-LAY-NATURAL',
@@ -153,7 +160,8 @@ async function seedDatabase() {
       stock: 40,
       minStock: 10,
       unit: 'gói',
-      hasQr: true
+      hasQr: true,
+      imageUrl: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=500&auto=format&fit=crop&q=80'
     },
     {
       code: 'GIAVI-KNORR-400',
@@ -165,7 +173,8 @@ async function seedDatabase() {
       stock: 20,
       minStock: 5,
       unit: 'gói',
-      hasQr: true
+      hasQr: true,
+      imageUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&auto=format&fit=crop&q=80'
     },
     {
       code: 'DAUAN-TUONGAN-1L',
@@ -177,7 +186,8 @@ async function seedDatabase() {
       stock: 4, // Intentionally LOW STOCK (<= minStock 10) to test warning
       minStock: 10,
       unit: 'chai',
-      hasQr: true
+      hasQr: true,
+      imageUrl: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&auto=format&fit=crop&q=80'
     },
     // Products without QR code (Option 2: No QR for custom/made-to-order items)
     {
@@ -190,7 +200,8 @@ async function seedDatabase() {
       stock: 100,
       minStock: 20,
       unit: 'ly',
-      hasQr: false
+      hasQr: false,
+      imageUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500&auto=format&fit=crop&q=80'
     },
     {
       code: 'MON-CAM-VAT-01',
@@ -202,7 +213,8 @@ async function seedDatabase() {
       stock: 50,
       minStock: 10,
       unit: 'ly',
-      hasQr: false
+      hasQr: false,
+      imageUrl: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=500&auto=format&fit=crop&q=80'
     }
   ];
 
@@ -213,16 +225,16 @@ async function seedDatabase() {
 
     const res = await query(`
       INSERT INTO products (
-        product_code, name, category_id, description,
+        product_code, name, category_id, description, image_url,
         cost_price, selling_price, stock_quantity, minimum_stock, unit,
         qr_code_token, has_qr, is_active, created_by, updated_by, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4,
-        $5, $6, $7, $8, $9,
-        $10, $11, TRUE, $12, $12, NOW(), NOW()
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        $11, $12, TRUE, $13, $13, NOW(), NOW()
       ) RETURNING *;
     `, [
-      p.code, p.name, catId, p.desc,
+      p.code, p.name, catId, p.desc, p.imageUrl,
       p.cost, p.price, p.stock, p.minStock, p.unit,
       qrToken, p.hasQr, superAdminId
     ]);
