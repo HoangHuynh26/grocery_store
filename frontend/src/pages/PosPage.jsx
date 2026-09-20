@@ -4,7 +4,7 @@ import { useSocket } from '../contexts/SocketContext';
 import { formatCurrency } from '../utils/formatters';
 import api from '../services/api';
 import confetti from 'canvas-confetti';
-import { QrCode, Search, ShoppingBag, Plus, AlertTriangle, Check, RefreshCw } from 'lucide-react';
+import { QrCode, Search, ShoppingBag, Plus, AlertTriangle, Check, RefreshCw, Package } from 'lucide-react';
 import QrScannerModal from '../components/pos/QrScannerModal';
 import CartDrawer from '../components/pos/CartDrawer';
 import ReceiptModal from '../components/pos/ReceiptModal';
@@ -239,6 +239,38 @@ export default function PosPage() {
                       <span title="Có mã QR" style={{ color: 'var(--text-muted)' }}>
                         <QrCode size={13} />
                       </span>
+                    )}
+                  </div>
+
+                  {/* Product Clear Image */}
+                  <div style={{
+                    width: '100%',
+                    height: '105px',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    backgroundColor: '#ffffff',
+                    marginBottom: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid var(--border-color)',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.06)'
+                  }}>
+                    {p.image_url ? (
+                      <img
+                        src={p.image_url}
+                        alt={p.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&auto=format&fit=crop&q=80';
+                        }}
+                      />
+                    ) : (
+                      <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                        <Package size={32} opacity={0.3} />
+                      </div>
                     )}
                   </div>
 
