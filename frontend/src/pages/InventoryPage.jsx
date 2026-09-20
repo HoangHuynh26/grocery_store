@@ -267,16 +267,16 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          <div className="table-responsive">
+            <div className="table-responsive">
             <table className="table table-wide">
               <thead>
                 <tr>
-                  <th>Mã SP</th>
+                  <th className="hide-mobile">Mã SP</th>
                   <th>Tên Sản Phẩm</th>
-                  <th>Danh Mục</th>
+                  <th className="hide-mobile">Danh Mục</th>
                   <th>Tồn Kho</th>
-                  <th>Tối Thiểu</th>
-                  <th>Đã Bán</th>
+                  <th className="hide-mobile">Tối Thiểu</th>
+                  <th className="hide-mobile">Đã Bán</th>
                   <th>Giá Trị Tồn</th>
                   <th style={{ textAlign: 'right' }}>Thao Tác Nhanh</th>
                 </tr>
@@ -298,13 +298,16 @@ export default function InventoryPage() {
                 ) : (
                   inventoryData.items.map((item) => (
                     <tr key={item.id}>
-                      <td style={{ fontWeight: 600, fontFamily: 'monospace', color: 'var(--primary)' }}>
+                      <td className="hide-mobile" style={{ fontWeight: 600, fontFamily: 'monospace', color: 'var(--primary)' }}>
                         {item.product_code}
                       </td>
                       <td>
                         <div style={{ fontWeight: 600 }}>{item.name}</div>
+                        <div className="show-mobile-only" style={{ fontSize: '11px', color: 'var(--primary)', fontFamily: 'monospace', marginTop: '2px' }}>
+                          {item.product_code} {item.category_name ? `• ${item.category_name}` : ''}
+                        </div>
                       </td>
-                      <td style={{ color: 'var(--text-secondary)' }}>
+                      <td className="hide-mobile" style={{ color: 'var(--text-secondary)' }}>
                         {item.category_name || '-'}
                       </td>
                       <td>
@@ -312,13 +315,13 @@ export default function InventoryPage() {
                           {item.current_stock} {item.unit}
                         </span>
                       </td>
-                      <td style={{ color: 'var(--text-muted)' }}>
+                      <td className="hide-mobile" style={{ color: 'var(--text-muted)' }}>
                         {item.minimum_stock} {item.unit}
                       </td>
-                      <td>
+                      <td className="hide-mobile">
                         {item.total_sold} {item.unit}
                       </td>
-                      <td style={{ fontWeight: 600 }}>
+                      <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
                         {formatCurrency(item.stock_value)}
                       </td>
                       <td style={{ textAlign: 'right' }}>

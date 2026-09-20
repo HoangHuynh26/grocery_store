@@ -154,8 +154,8 @@ export default function InvoicesPage() {
             <tr>
               <th>Số Hóa Đơn</th>
               <th>Thời Gian</th>
-              <th>Thu Ngân</th>
-              <th>Số Món</th>
+              <th className="hide-mobile">Thu Ngân</th>
+              <th className="hide-mobile">Số Món</th>
               <th>Tổng Tiền</th>
               <th>Thanh Toán</th>
               <th>Trạng Thái</th>
@@ -179,19 +179,24 @@ export default function InvoicesPage() {
             ) : (
               invoices.map((inv) => (
                 <tr key={inv.id}>
-                  <td style={{ fontWeight: 600, fontFamily: 'monospace', color: 'var(--primary)' }}>
-                    {inv.invoice_number}
+                  <td>
+                    <div style={{ fontWeight: 600, fontFamily: 'monospace', color: 'var(--primary)' }}>
+                      {inv.invoice_number}
+                    </div>
+                    <div className="show-mobile-only" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {inv.created_by_name || 'Admin'} • {inv.items_count} món
+                    </div>
                   </td>
-                  <td style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  <td style={{ fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                     {formatDateTime(inv.created_at)}
                   </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>
+                  <td className="hide-mobile" style={{ color: 'var(--text-secondary)' }}>
                     {inv.created_by_name || 'Admin'}
                   </td>
-                  <td>
+                  <td className="hide-mobile">
                     {inv.items_count} món ({inv.total_units_sold} đơn vị)
                   </td>
-                  <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                  <td style={{ fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                     {formatCurrency(inv.total_amount)}
                   </td>
                   <td>
@@ -201,7 +206,7 @@ export default function InvoicesPage() {
                   </td>
                   <td>
                     <span className={`badge ${inv.status === 'COMPLETED' ? 'badge-success' : (inv.status === 'ADJUSTED' ? 'badge-warning' : 'badge-danger')}`}>
-                      {inv.status === 'COMPLETED' ? 'Thành công' : (inv.status === 'ADJUSTED' ? 'Đã điều chỉnh' : 'Đã hủy')}
+                      {inv.status === 'COMPLETED' ? 'Thành công' : (inv.status === 'ADJUSTED' ? 'Đã sửa' : 'Đã hủy')}
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>

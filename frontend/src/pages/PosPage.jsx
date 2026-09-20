@@ -105,40 +105,28 @@ export default function PosPage() {
   });
 
   return (
-    <div style={{
-      display: 'flex',
-      height: 'calc(100vh - var(--header-height))',
-      overflow: 'hidden',
-      position: 'relative'
-    }}>
+    <div className="pos-layout-wrapper">
       {/* Left Column: Product Catalog */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        overflowY: 'auto',
-        padding: '12px',
-        paddingBottom: 'calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 75px)'
-      }}>
+      <div className={`pos-catalog-scroll ${totalUnits > 0 ? 'has-cart' : ''}`}>
         {/* Top Controls: Search Bar & QR Scanner Trigger */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
           <div style={{ position: 'relative', flex: 1 }}>
             <input
               type="text"
               className="form-control"
-              style={{ paddingLeft: '38px', height: '44px', fontSize: '14px' }}
+              style={{ paddingLeft: '38px', height: '42px', fontSize: '14px' }}
               placeholder="Tìm tên món, mã SP..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Search size={17} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
+            <Search size={17} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
           </div>
 
           <button
             type="button"
             className="btn btn-primary"
             onClick={() => setIsScannerOpen(true)}
-            style={{ height: '44px', padding: '0 14px', flexShrink: 0 }}
+            style={{ height: '42px', padding: '0 14px', flexShrink: 0, gap: '6px' }}
             title="Quét QR Camera"
           >
             <QrCode size={18} />
@@ -146,20 +134,12 @@ export default function PosPage() {
           </button>
         </div>
 
-        {/* Category Pills */}
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          overflowX: 'auto',
-          paddingBottom: '10px',
-          marginBottom: '14px',
-          WebkitOverflowScrolling: 'touch'
-        }}>
+        {/* Category Pills Bar (Smooth swipe, no scrollbar, zero clipping) */}
+        <div className="category-pills-bar">
           <button
             type="button"
-            className={`btn ${selectedCategory === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`category-pill-btn btn ${selectedCategory === 'all' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setSelectedCategory('all')}
-            style={{ padding: '6px 14px', fontSize: '13px', flexShrink: 0, borderRadius: 'var(--radius-full)' }}
           >
             Tất cả ({products.length})
           </button>
@@ -167,9 +147,8 @@ export default function PosPage() {
             <button
               key={cat.id}
               type="button"
-              className={`btn ${selectedCategory === cat.id ? 'btn-primary' : 'btn-secondary'}`}
+              className={`category-pill-btn btn ${selectedCategory === cat.id ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => setSelectedCategory(cat.id)}
-              style={{ padding: '6px 14px', fontSize: '13px', flexShrink: 0, borderRadius: 'var(--radius-full)' }}
             >
               {cat.name}
             </button>
@@ -240,19 +219,22 @@ export default function PosPage() {
                   </div>
 
                   {/* Product Clear Image */}
-                  <div style={{
-                    width: '100%',
-                    height: '105px',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    backgroundColor: '#ffffff',
-                    marginBottom: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.06)'
-                  }}>
+                  <div
+                    className="product-card-img-wrap"
+                    style={{
+                      width: '100%',
+                      height: '105px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      backgroundColor: '#ffffff',
+                      marginBottom: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid var(--border-color)',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.06)'
+                    }}
+                  >
                     {p.image_url ? (
                       <img
                         src={p.image_url}
@@ -272,21 +254,24 @@ export default function PosPage() {
                   </div>
 
                   {/* Name & Code */}
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{
-                      fontWeight: 700,
-                      fontSize: '14px',
-                      color: 'var(--text-primary)',
-                      lineHeight: 1.3,
-                      height: '36px',
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
-                    }}>
+                  <div style={{ marginBottom: '10px' }}>
+                    <div
+                      className="product-name-clamp"
+                      style={{
+                        fontWeight: 700,
+                        fontSize: '14px',
+                        color: 'var(--text-primary)',
+                        lineHeight: 1.3,
+                        height: '36px',
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical'
+                      }}
+                    >
                       {p.name}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {p.product_code}
                     </div>
                   </div>
@@ -413,11 +398,13 @@ export default function PosPage() {
 
       <style>{`
         @media (min-width: 1024px) {
-          .desktop-cart-panel { display: block !important; }
+          .desktop-cart-panel { display: flex !important; }
           .mobile-cart-bar { display: none !important; }
         }
         @media (max-width: 640px) {
-          .product-card { padding: 10px !important; }
+          .product-card { padding: 9px !important; }
+          .product-card-img-wrap { height: 92px !important; }
+          .product-name-clamp { font-size: 13px !important; height: 32px !important; }
         }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }

@@ -114,9 +114,9 @@ export default function CategoriesPage() {
           <thead>
             <tr>
               <th>Tên Danh Mục</th>
-              <th>Mã Slug</th>
-              <th>Mô Tả</th>
-              <th>Số Sản Phẩm Đang Bán</th>
+              <th className="hide-mobile">Mã Slug</th>
+              <th className="hide-mobile">Mô Tả</th>
+              <th>Số Sản Phẩm</th>
               <th>Trạng Thái</th>
               <th style={{ textAlign: 'right' }}>Thao Tác</th>
             </tr>
@@ -138,23 +138,28 @@ export default function CategoriesPage() {
             ) : (
               categories.map((cat) => (
                 <tr key={cat.id}>
-                  <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {cat.name}
+                  <td>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {cat.name}
+                    </div>
+                    <div className="show-mobile-only" style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {cat.slug}
+                    </div>
                   </td>
-                  <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                  <td className="hide-mobile" style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>
                     {cat.slug}
                   </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>
+                  <td className="hide-mobile" style={{ color: 'var(--text-secondary)' }}>
                     {cat.description || '-'}
                   </td>
                   <td>
                     <span className="badge badge-info">
-                      {cat.active_products_count || 0} sản phẩm
+                      {cat.active_products_count || 0} SP
                     </span>
                   </td>
                   <td>
                     <span className={`badge ${cat.is_active ? 'badge-success' : 'badge-danger'}`}>
-                      {cat.is_active ? 'Đang hoạt động' : 'Tạm ngưng'}
+                      {cat.is_active ? 'Hoạt động' : 'Tạm ngưng'}
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
