@@ -222,6 +222,61 @@ async function runTests() {
   });
   assert(chat2.status === 200 && chat2.data.data.reply.includes('Dự báo doanh thu'), 'AI Assistant answered revenue forecast query');
 
+  // TEST 9: AI Product Auto-Classification
+  console.log('\n[9] Testing AI Product Auto-Classification Engine...');
+  const classifyBeverage = await request('/ai/classify-product', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${staffToken}` },
+    body: JSON.stringify({ name: 'Trà Ô Long Tea+ Plus 455ml' })
+  });
+  assert(classifyBeverage.status === 200, 'AI classification endpoint returns 200');
+  assert(
+    classifyBeverage.data.data.categoryName.includes('Nước giải khát') || classifyBeverage.data.data.confidence >= 0.7,
+    `AI accurately classified Tea+ as Beverage (Category: ${classifyBeverage.data.data.categoryName}, Confidence: ${classifyBeverage.data.data.confidence})`
+  );
+  assert(
+    classifyBeverage.data.data.suggestedCode.startsWith('TRA-') || classifyBeverage.data.data.suggestedCode.length >= 3,
+    `AI generated valid suggested SKU code: ${classifyBeverage.data.data.suggestedCode}`
+  );
+
+  const classifyNoodles = await request('/ai/classify-product', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${staffToken}` },
+    body: JSON.stringify({ name: 'Mì gói Hảo Hảo Sa tế hành' })
+  });
+  assert(
+    classifyNoodles.status === 200 && classifyNoodles.data.data.categoryName.includes('Mì'),
+    `AI accurately classified Hảo Hảo as Noodle category (${classifyNoodles.data.data.categoryName})`
+  );
+
+  // TEST 10: Import Goods with AI Classification & Transaction Consistency
+  console.log('\n[10] Testing Import Goods with AI Auto-Classification...');
+  const uniqueImportName = `Snack Oishi Bắp Rang Bơ Mới ${Date.now()}`;
+  const importResult = await request('/inventory/import-new', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({
+      name: uniqueImportName,
+      quantity: 50,
+      costPrice: 6000,
+      sellingPrice: 9000,
+      reason: 'Nhập thử nghiệm hàng mới với AI phân loại tự động'
+    })
+  });
+  assert(importResult.status === 201, 'Import new product with AI returns 201 Created');
+  assert(
+    importResult.data.data.product.stockQuantity === 50,
+    `New product initial stock verified: ${importResult.data.data.product.stockQuantity}`
+  );
+  assert(
+    !!importResult.data.data.classification,
+    `AI classification attached to import response: ${importResult.data.data.classification?.categoryName}`
+  );
+  assert(
+    importResult.data.data.transaction.transaction_type === 'IMPORT',
+    'Inventory transaction recorded as IMPORT'
+  );
+
   console.log('\n====================================================');
   console.log(` TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================');
