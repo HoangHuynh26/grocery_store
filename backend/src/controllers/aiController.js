@@ -1,5 +1,6 @@
 const LangGraphAgent = require('../modules/ai/assistant/langGraphAgent');
 const ForecastService = require('../modules/ai/forecasting/forecastService');
+const ProductClassifier = require('../modules/ai/classifier/productClassifier');
 const { query } = require('../database');
 const { createAuditLog } = require('../repositories/auditRepository');
 const { AppError } = require('../middleware/errorHandler');
@@ -93,6 +94,24 @@ class AiController {
         success: true,
         data: result,
         message: 'Huấn luyện và cập nhật mô hình dự đoán doanh thu thành công.'
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async classifyProduct(req, res, next) {
+    try {
+      const { name, productName, description } = req.body;
+      const targetName = name || productName;
+      if (!targetName || !targetName.trim()) {
+        throw new AppError('Vui lòng cung cấp tên sản phẩm để AI phân loại.', 400, 'MISSING_NAME');
+      }
+
+      const result = await ProductClassifier.classify(targetName, description);
+      return res.status(200).json({
+        success: true,
+        data: result
       });
     } catch (err) {
       next(err);

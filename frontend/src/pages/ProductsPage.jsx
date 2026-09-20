@@ -77,6 +77,35 @@ export default function ProductsPage() {
   const [autoCodeEnabled, setAutoCodeEnabled] = useState(true);
   const checkCodeDebounceRef = useRef(null);
 
+  // AI Category Auto-Classification State
+  const [aiClassifying, setAiClassifying] = useState(false);
+  const [aiClassifyResult, setAiClassifyResult] = useState(null);
+
+  const handleAiClassifyCategory = async () => {
+    const targetName = (formData.name || '').trim();
+    if (!targetName) return;
+    try {
+      setAiClassifying(true);
+      const res = await api.post('/ai/classify-product', {
+        name: targetName,
+        description: formData.description
+      });
+      if (res.data?.data) {
+        const result = res.data.data;
+        setAiClassifyResult(result);
+        setFormData(prev => ({
+          ...prev,
+          categoryId: result.categoryId || prev.categoryId,
+          unit: (!prev.unit || prev.unit === 'cái') ? (result.suggestedUnit || prev.unit) : prev.unit
+        }));
+      }
+    } catch (err) {
+      console.warn('AI classification failed in ProductsPage:', err);
+    } finally {
+      setAiClassifying(false);
+    }
+  };
+
   const verifyProductCode = useCallback(async (codeToTest, currentProdId = null) => {
     if (!codeToTest || !codeToTest.trim()) {
       setCodeCheckResult(null);
@@ -181,6 +210,7 @@ export default function ProductsPage() {
     });
     setFormError('');
     setCodeCheckResult(null);
+    setAiClassifyResult(null);
     setAutoCodeEnabled(true);
     setIsFormModalOpen(true);
   };
@@ -202,6 +232,7 @@ export default function ProductsPage() {
     });
     setFormError('');
     setCodeCheckResult(null);
+    setAiClassifyResult(null);
     setAutoCodeEnabled(false);
     setIsFormModalOpen(true);
   };
@@ -643,7 +674,20 @@ export default function ProductsPage() {
 
           <div className="form-grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Danh mục</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="form-label">Danh mục</label>
+                <button
+                  type="button"
+                  onClick={handleAiClassifyCategory}
+                  disabled={aiClassifying || !formData.name}
+                  className="btn btn-secondary"
+                  style={{ padding: '2px 8px', fontSize: '11px', height: '22px', gap: '4px', border: '1px solid var(--primary-light)' }}
+                  title="Dùng AI nhận diện danh mục tự động dựa trên tên sản phẩm"
+                >
+                  <Sparkles size={12} color="var(--primary)" />
+                  <span>{aiClassifying ? 'AI đang phân tích...' : '✨ AI Phân Loại'}</span>
+                </button>
+              </div>
               <select
                 className="form-control"
                 value={formData.categoryId}
@@ -654,6 +698,25 @@ export default function ProductsPage() {
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+
+              {aiClassifyResult && (
+                <div style={{
+                  marginTop: '6px',
+                  padding: '6px 8px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '11px',
+                  color: 'var(--primary)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                    <Sparkles size={12} /> AI đề xuất: {aiClassifyResult.categoryName} ({Math.round(aiClassifyResult.confidence * 100)}%)
+                  </div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '10px', marginTop: '2px' }}>
+                    {aiClassifyResult.reason}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>

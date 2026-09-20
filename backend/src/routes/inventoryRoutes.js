@@ -8,6 +8,7 @@ router.use(authenticateToken);
 router.get('/', InventoryController.getStatus);
 router.get('/transactions', InventoryController.getHistory);
 router.post('/import', requireAdmin, InventoryController.importGoods);
+router.post('/import-new', requireAdmin, InventoryController.importNewGoods);
 router.post('/adjust', requireAdmin, InventoryController.adjust);
 
 module.exports = router;

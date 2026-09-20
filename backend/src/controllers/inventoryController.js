@@ -112,6 +112,60 @@ class InventoryController {
       next(err);
     }
   }
+
+  static async importNewGoods(req, res, next) {
+    const clientIp = req.ip || req.headers['x-forwarded-for'];
+    const userAgent = req.headers['user-agent'];
+
+    try {
+      const {
+        name,
+        productCode,
+        categoryId,
+        description,
+        imageUrl,
+        costPrice,
+        sellingPrice,
+        quantity,
+        minimumStock,
+        unit,
+        referenceId,
+        reason,
+        autoClassify
+      } = req.body;
+
+      if (!name || !quantity) {
+        throw new AppError('Vui lòng cung cấp tên sản phẩm và số lượng nhập.', 400, 'MISSING_FIELDS');
+      }
+
+      const result = await InventoryService.importNewProduct({
+        name,
+        productCode,
+        categoryId,
+        description,
+        imageUrl,
+        costPrice,
+        sellingPrice,
+        quantity,
+        minimumStock,
+        unit,
+        referenceId,
+        reason,
+        autoClassify: autoClassify !== undefined ? autoClassify : true,
+        userId: req.user.id,
+        clientIp,
+        userAgent
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: result,
+        message: 'Nhập hàng và tạo sản phẩm mới thành công.'
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = InventoryController;
