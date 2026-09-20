@@ -178,8 +178,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DE
 -- Tài khoản 2: nhanvien1 / Staff@123456 (Role: ADMIN / Cashier)
 INSERT INTO users (id, username, email, password_hash, full_name, phone, role, is_active)
 VALUES 
-    ('a0000000-0000-0000-0000-000000000001', 'admin', 'admin@grocerystore.vn', '$argon2id$v=19$m=19456,t=2,p=1$D+KCHAbP3a9WxjFQ134RMQ$Pp/A/E5iGbK3FKymQDIwWYMqaMynV0csgDcj4op5ZFI', 'Quản Trị Viên Cửa Hàng', '0901234567', 'SUPER_ADMIN', TRUE),
-    ('a0000000-0000-0000-0000-000000000002', 'nhanvien1', 'staff1@grocerystore.vn', '$argon2id$v=19$m=19456,t=2,p=1$Bt9EdusLmGzB8b+T1tedcA$mOwI7LPHGkMpqTI9depV+wJKEAWN8QcPr8BlYbL3iKg', 'Nguyễn Văn Bán Hàng', '0987654321', 'ADMIN', TRUE)
+    ('a0000000-0000-0000-0000-000000000001', 'admin', 'admin@grocerystore.vn', '$argon2id$v=19$m=19456,t=2,p=1$YJBgFaLe4Q6942vgb9a3VQ$YOB1jiTIFGDg/XLGT7k6sNmq+bSOEbvoV6o/9tTUyGE', 'Quản Trị Viên Cửa Hàng', '0901234567', 'SUPER_ADMIN', TRUE),
+    ('a0000000-0000-0000-0000-000000000002', 'nhanvien1', 'staff1@grocerystore.vn', '$argon2id$v=19$m=19456,t=2,p=1$YJBgFaLe4Q6942vgb9a3VQ$YOB1jiTIFGDg/XLGT7k6sNmq+bSOEbvoV6o/9tTUyGE', 'Nguyễn Văn Bán Hàng', '0987654321', 'ADMIN', TRUE)
 ON CONFLICT (username) DO NOTHING;
 
 -- 4.2 Tạo Danh mục hàng hóa mẫu

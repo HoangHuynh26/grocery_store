@@ -90,7 +90,7 @@ export default function CategoriesPage() {
   return (
     <div className="page-container">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="page-header-responsive">
         <div>
           <h1 style={{ fontSize: '22px' }}>Quản Lý Danh Mục</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
@@ -110,7 +110,7 @@ export default function CategoriesPage() {
 
       {/* Categories Table */}
       <div className="table-responsive">
-        <table className="table">
+        <table className="table table-compact">
           <thead>
             <tr>
               <th>Tên Danh Mục</th>

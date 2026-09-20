@@ -149,7 +149,7 @@ export default function InventoryPage() {
   return (
     <div className="page-container">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="page-header-responsive">
         <div>
           <h1 style={{ fontSize: '22px' }}>Quản Lý Kho Hàng</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
@@ -157,11 +157,12 @@ export default function InventoryPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button
             type="button"
             className="btn btn-secondary"
             onClick={() => openAdjustModal()}
+            style={{ flex: '1 1 140px' }}
           >
             <Sliders size={16} />
             <span>Điều Chỉnh Kho</span>
@@ -170,6 +171,7 @@ export default function InventoryPage() {
             type="button"
             className="btn btn-primary"
             onClick={() => openImportModal()}
+            style={{ flex: '1 1 140px' }}
           >
             <ArrowDownToLine size={16} />
             <span>Nhập Thêm Hàng</span>
@@ -180,8 +182,8 @@ export default function InventoryPage() {
       {/* KPI Overview Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '14px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
+        gap: '12px',
         marginBottom: '20px'
       }}>
         <div className="card" style={{ padding: '16px' }}>
@@ -266,7 +268,7 @@ export default function InventoryPage() {
           </div>
 
           <div className="table-responsive">
-            <table className="table">
+            <table className="table table-wide">
               <thead>
                 <tr>
                   <th>Mã SP</th>
@@ -353,7 +355,7 @@ export default function InventoryPage() {
       {/* Tab 2: Inventory Transactions History */}
       {activeTab === 'history' && (
         <div className="table-responsive">
-          <table className="table">
+          <table className="table table-wide">
             <thead>
               <tr>
                 <th>Thời Gian</th>
@@ -447,7 +449,7 @@ export default function InventoryPage() {
             </select>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="form-grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Số lượng nhập thêm *</label>
               <input
@@ -533,7 +535,7 @@ export default function InventoryPage() {
             </select>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="form-grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Số lượng thực tế mới *</label>
               <input

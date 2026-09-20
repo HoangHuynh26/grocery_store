@@ -93,6 +93,18 @@ async function runTests() {
   });
   assert(qrLookup.status === 200 && qrLookup.data.data.id === sampleProduct.id, 'Lookup product by secure QR token');
 
+  // TEST 4B: Real-time Product Code Uniqueness Check
+  console.log('\n[4B] Testing Product Code Uniqueness Check...');
+  const dupCodeCheck = await request(`/products/check-code?code=${sampleProduct.product_code}`, {
+    headers: { Authorization: `Bearer ${staffToken}` }
+  });
+  assert(dupCodeCheck.status === 200 && dupCodeCheck.data.data.available === false, `Detect duplicate code "${sampleProduct.product_code}" correctly`);
+
+  const uniqueCodeCheck = await request(`/products/check-code?code=BRAND-NEW-UNIQUE-CODE-${Date.now()}`, {
+    headers: { Authorization: `Bearer ${staffToken}` }
+  });
+  assert(uniqueCodeCheck.status === 200 && uniqueCodeCheck.data.data.available === true, 'Accept brand new unique product code');
+
   // TEST 5: Concurrency & Overselling Prevention
   console.log('\n[5] Testing Concurrency Control & Overselling Prevention...');
   // Create a test product with exactly 5 items

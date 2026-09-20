@@ -85,7 +85,7 @@ export default function AdminsPage() {
   return (
     <div className="page-container">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="page-header-responsive">
         <div>
           <h1 style={{ fontSize: '22px' }}>Quản Lý Quản Trị Viên & Nhân Viên</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
@@ -129,7 +129,7 @@ export default function AdminsPage() {
       {/* Tab 1: Users */}
       {activeTab === 'users' && (
         <div className="table-responsive">
-          <table className="table">
+          <table className="table table-wide">
             <thead>
               <tr>
                 <th>Họ & Tên</th>
@@ -193,7 +193,7 @@ export default function AdminsPage() {
       {/* Tab 2: Login Logs */}
       {activeTab === 'logins' && (
         <div className="table-responsive">
-          <table className="table">
+          <table className="table table-wide">
             <thead>
               <tr>
                 <th>Thời Gian</th>
@@ -248,7 +248,7 @@ export default function AdminsPage() {
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="form-grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Tên đăng nhập *</label>
               <input
@@ -286,7 +286,7 @@ export default function AdminsPage() {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="form-grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Mật khẩu ban đầu *</label>
               <input

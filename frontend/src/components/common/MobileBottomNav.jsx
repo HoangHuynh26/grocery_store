@@ -31,11 +31,11 @@ export default function MobileBottomNav() {
               borderTop: '1px solid var(--border-color)',
               borderTopLeftRadius: '20px',
               borderTopRightRadius: '20px',
-              padding: '24px 20px',
+              padding: '20px 16px calc(24px + env(safe-area-inset-bottom, 0px)) 16px',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px',
-              maxHeight: '75vh',
+              maxHeight: '80vh',
               overflowY: 'auto'
             }}
           >
@@ -113,14 +113,14 @@ export default function MobileBottomNav() {
         bottom: 0,
         left: 0,
         right: 0,
-        height: 'var(--mobile-nav-height)',
+        height: 'calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px))',
         backgroundColor: 'var(--bg-card)',
         borderTop: '1px solid var(--border-color)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-around',
         zIndex: 800,
-        padding: '0 8px',
+        padding: '0 4px env(safe-area-inset-bottom, 0px) 4px',
         boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.4)'
       }} className="mobile-bottom-nav">
         <NavLink
