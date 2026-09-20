@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { useSocket } from '../contexts/SocketContext';
 import { formatCurrency } from '../utils/formatters';
 import api from '../services/api';
 import confetti from 'canvas-confetti';
-import { QrCode, Search, ShoppingBag, Plus, AlertTriangle, Check, RefreshCw, Package } from 'lucide-react';
+import { QrCode, Search, ShoppingBag, Plus, AlertTriangle, Check, RefreshCw, Package, Filter, ChevronDown, X } from 'lucide-react';
 import QrScannerModal from '../components/pos/QrScannerModal';
 import CartDrawer from '../components/pos/CartDrawer';
 import ReceiptModal from '../components/pos/ReceiptModal';
@@ -94,6 +94,20 @@ export default function PosPage() {
     loadData(); // Refresh product stock list
   };
 
+  const categoryProductCounts = useMemo(() => {
+    const counts = {};
+    products.forEach((p) => {
+      counts[p.category_id] = (counts[p.category_id] || 0) + 1;
+    });
+    return counts;
+  }, [products]);
+
+  const selectedCategoryName = useMemo(() => {
+    if (selectedCategory === 'all') return 'Tất cả';
+    const cat = categories.find((c) => c.id === selectedCategory);
+    return cat ? cat.name : 'Danh mục';
+  }, [selectedCategory, categories]);
+
   const filteredProducts = products.filter((p) => {
     const matchesCat = selectedCategory === 'all' || p.category_id === selectedCategory;
     const q = searchQuery.toLowerCase().trim();
@@ -108,52 +122,111 @@ export default function PosPage() {
     <div className="pos-layout-wrapper">
       {/* Left Column: Product Catalog */}
       <div className={`pos-catalog-scroll ${totalUnits > 0 ? 'has-cart' : ''}`}>
-        {/* Top Controls: Search Bar & QR Scanner Trigger */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <input
-              type="text"
-              className="form-control"
-              style={{ paddingLeft: '38px', height: '42px', fontSize: '14px' }}
-              placeholder="Tìm tên món, mã SP..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Search size={17} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+        {/* Top Controls: Search Bar, Category Popdown, and QR Scanner Trigger */}
+        <div className="pos-controls-container">
+          <div className="pos-controls-top-row">
+            <div className="pos-search-wrapper">
+              <input
+                type="text"
+                className="form-control"
+                style={{ paddingLeft: '38px', height: '42px', fontSize: '14px' }}
+                placeholder="Tìm tên món, mã SP..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search size={17} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+            </div>
+
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setIsScannerOpen(true)}
+              style={{ height: '42px', padding: '0 14px', flexShrink: 0, gap: '6px' }}
+              title="Quét QR Camera"
+            >
+              <QrCode size={18} />
+              <span style={{ fontWeight: 700, fontSize: '13px' }}>Quét QR</span>
+            </button>
           </div>
 
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => setIsScannerOpen(true)}
-            style={{ height: '42px', padding: '0 14px', flexShrink: 0, gap: '6px' }}
-            title="Quét QR Camera"
-          >
-            <QrCode size={18} />
-            <span style={{ fontWeight: 700, fontSize: '13px' }}>Quét QR</span>
-          </button>
+          {/* Category Popdown Selector (Requested by user: drop-down menu for clean & easy selection) */}
+          <div className="pos-category-select-wrapper">
+            <select
+              className="form-control"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              style={{
+                height: '42px',
+                paddingLeft: '34px',
+                paddingRight: '32px',
+                fontSize: '13px',
+                fontWeight: 600,
+                backgroundColor: selectedCategory !== 'all' ? 'var(--primary-light)' : 'var(--bg-input)',
+                borderColor: selectedCategory !== 'all' ? 'var(--primary)' : 'var(--border-color)',
+                color: selectedCategory !== 'all' ? 'var(--primary)' : 'var(--text-primary)',
+                cursor: 'pointer',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                width: '100%',
+                borderRadius: 'var(--radius-md)'
+              }}
+              title="Chọn danh mục sản phẩm"
+            >
+              <option value="all">Tất cả danh mục ({products.length} SP)</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name} ({categoryProductCounts[cat.id] || 0} SP)
+                </option>
+              ))}
+            </select>
+            <Filter
+              size={15}
+              color={selectedCategory !== 'all' ? 'var(--primary)' : 'var(--text-muted)'}
+              style={{ position: 'absolute', left: '11px', top: '13px', pointerEvents: 'none' }}
+            />
+            <ChevronDown
+              size={15}
+              color={selectedCategory !== 'all' ? 'var(--primary)' : 'var(--text-muted)'}
+              style={{ position: 'absolute', right: '11px', top: '13px', pointerEvents: 'none' }}
+            />
+          </div>
         </div>
 
-        {/* Category Pills Bar (Smooth swipe, no scrollbar, zero clipping) */}
-        <div className="category-pills-bar">
-          <button
-            type="button"
-            className={`category-pill-btn btn ${selectedCategory === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setSelectedCategory('all')}
-          >
-            Tất cả ({products.length})
-          </button>
-          {categories.map((cat) => (
+        {/* Active Filter Chip when category is selected */}
+        {selectedCategory !== 'all' && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            backgroundColor: 'var(--primary-light)',
+            border: '1px solid var(--primary-border)',
+            color: 'var(--primary)',
+            padding: '4px 12px',
+            borderRadius: 'var(--radius-full)',
+            fontSize: '12px',
+            fontWeight: 600,
+            marginBottom: '12px',
+            alignSelf: 'flex-start'
+          }}>
+            <span>Đang lọc: {selectedCategoryName} ({filteredProducts.length} sản phẩm)</span>
             <button
-              key={cat.id}
               type="button"
-              className={`category-pill-btn btn ${selectedCategory === cat.id ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setSelectedCategory(cat.id)}
+              onClick={() => setSelectedCategory('all')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0'
+              }}
+              title="Bỏ lọc danh mục"
             >
-              {cat.name}
+              <X size={14} />
             </button>
-          ))}
-        </div>
+          </div>
+        )}
 
         {/* Product Grid */}
         {loading ? (
