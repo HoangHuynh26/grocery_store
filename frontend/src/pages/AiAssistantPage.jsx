@@ -71,7 +71,15 @@ export default function AiAssistantPage() {
   };
 
   return (
-    <div className="page-container" style={{ maxWidth: '900px', height: 'calc(100vh - var(--header-height) - 40px)', display: 'flex', flexDirection: 'column' }}>
+    <div
+      className="page-container ai-chat-container"
+      style={{
+        maxWidth: '900px',
+        height: 'calc(100vh - var(--header-height) - var(--mobile-nav-height) - env(safe-area-inset-bottom, 0px) - 24px)',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -277,6 +285,14 @@ export default function AiAssistantPage() {
           </button>
         </div>
       </div>
+
+      <style>{`
+        @media (min-width: 1024px) {
+          .ai-chat-container {
+            height: calc(100vh - var(--header-height) - 40px) !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

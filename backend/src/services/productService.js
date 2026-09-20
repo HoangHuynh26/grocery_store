@@ -36,6 +36,27 @@ class ProductService {
     return product;
   }
 
+  static async checkCodeUniqueness(productCode, excludeId = null) {
+    if (!productCode || !productCode.trim()) {
+      return { available: false, message: 'Mã sản phẩm không được để trống.' };
+    }
+    const cleanCode = productCode.trim().toUpperCase();
+    const existing = await findByCode(cleanCode);
+    if (existing && existing.id !== excludeId) {
+      return {
+        available: false,
+        productCode: cleanCode,
+        existingProduct: { id: existing.id, name: existing.name },
+        message: `Mã sản phẩm "${cleanCode}" đã tồn tại (Sản phẩm: "${existing.name}"). Vui lòng chọn hoặc đổi mã khác.`
+      };
+    }
+    return {
+      available: true,
+      productCode: cleanCode,
+      message: 'Mã sản phẩm hợp lệ, có thể sử dụng.'
+    };
+  }
+
   static async getProductByQrToken(token) {
     const product = await findByQrToken(token);
     if (!product) {

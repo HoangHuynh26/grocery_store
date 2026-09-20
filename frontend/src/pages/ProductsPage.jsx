@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { formatCurrency } from '../utils/formatters';
+import { generateProductCodeFromName, generateAlternativeCode } from '../utils/codeGenerator';
 import api from '../services/api';
 import {
   Package,
@@ -15,7 +16,10 @@ import {
   Image as ImageIcon,
   Upload,
   Maximize2,
-  X
+  X,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -67,6 +71,73 @@ export default function ProductsPage() {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Realtime Product Code Uniqueness & Auto-generation State
+  const [codeCheckLoading, setCodeCheckLoading] = useState(false);
+  const [codeCheckResult, setCodeCheckResult] = useState(null); // { available: boolean, message: string }
+  const [autoCodeEnabled, setAutoCodeEnabled] = useState(true);
+  const checkCodeDebounceRef = useRef(null);
+
+  const verifyProductCode = useCallback(async (codeToTest, currentProdId = null) => {
+    if (!codeToTest || !codeToTest.trim()) {
+      setCodeCheckResult(null);
+      return;
+    }
+    try {
+      setCodeCheckLoading(true);
+      const res = await api.get(`/products/check-code?code=${encodeURIComponent(codeToTest.trim())}&excludeId=${currentProdId || ''}`);
+      if (res.data?.data) {
+        setCodeCheckResult(res.data.data);
+      }
+    } catch (e) {
+      console.warn('Check code failed:', e.message);
+    } finally {
+      setCodeCheckLoading(false);
+    }
+  }, []);
+
+  const handleProductCodeChange = (newCode) => {
+    const uppercaseCode = newCode.toUpperCase();
+    setFormData(prev => ({ ...prev, productCode: uppercaseCode }));
+    setAutoCodeEnabled(false); // User manually modified code
+
+    if (checkCodeDebounceRef.current) {
+      clearTimeout(checkCodeDebounceRef.current);
+    }
+    checkCodeDebounceRef.current = setTimeout(() => {
+      verifyProductCode(uppercaseCode, editingProduct?.id);
+    }, 300);
+  };
+
+  const handleProductNameChange = (newName) => {
+    setFormData(prev => {
+      const updated = { ...prev, name: newName };
+      if (autoCodeEnabled || !prev.productCode) {
+        const generated = generateProductCodeFromName(newName);
+        updated.productCode = generated;
+        if (checkCodeDebounceRef.current) {
+          clearTimeout(checkCodeDebounceRef.current);
+        }
+        checkCodeDebounceRef.current = setTimeout(() => {
+          verifyProductCode(generated, editingProduct?.id);
+        }, 300);
+      }
+      return updated;
+    });
+  };
+
+  const handleGenerateCodeClick = () => {
+    const generated = generateProductCodeFromName(formData.name || 'SAN-PHAM');
+    setFormData(prev => ({ ...prev, productCode: generated }));
+    setAutoCodeEnabled(true);
+    verifyProductCode(generated, editingProduct?.id);
+  };
+
+  const handleFixDuplicateCode = () => {
+    const altCode = generateAlternativeCode(formData.productCode);
+    setFormData(prev => ({ ...prev, productCode: altCode }));
+    verifyProductCode(altCode, editingProduct?.id);
+  };
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -109,6 +180,8 @@ export default function ProductsPage() {
       imageUrl: ''
     });
     setFormError('');
+    setCodeCheckResult(null);
+    setAutoCodeEnabled(true);
     setIsFormModalOpen(true);
   };
 
@@ -128,6 +201,8 @@ export default function ProductsPage() {
       imageUrl: product.image_url || ''
     });
     setFormError('');
+    setCodeCheckResult(null);
+    setAutoCodeEnabled(false);
     setIsFormModalOpen(true);
   };
 
@@ -149,6 +224,11 @@ export default function ProductsPage() {
     e.preventDefault();
     if (!formData.productCode || !formData.name || !formData.sellingPrice) {
       setFormError('Vui lòng điền mã sản phẩm, tên và giá bán.');
+      return;
+    }
+
+    if (codeCheckResult && !codeCheckResult.available) {
+      setFormError('Mã sản phẩm đã tồn tại trong hệ thống. Vui lòng đổi mã khác trước khi lưu.');
       return;
     }
 
@@ -219,7 +299,7 @@ export default function ProductsPage() {
   return (
     <div className="page-container">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="page-header-responsive">
         <div>
           <h1 style={{ fontSize: '22px' }}>Quản Lý Sản Phẩm</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
@@ -239,8 +319,8 @@ export default function ProductsPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="card" style={{ padding: '16px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="card" style={{ padding: '14px', marginBottom: '18px' }}>
+        <div className="filter-bar-responsive">
           <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
             <input
               type="text"
@@ -265,7 +345,7 @@ export default function ProductsPage() {
             ))}
           </select>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)', padding: '6px 0' }}>
             <input
               type="checkbox"
               checked={lowStockOnly}
@@ -279,7 +359,7 @@ export default function ProductsPage() {
 
       {/* Products Table */}
       <div className="table-responsive">
-        <table className="table">
+        <table className="table table-wide">
           <thead>
             <tr>
               <th style={{ width: '68px' }}>Hình Ảnh</th>
@@ -461,19 +541,7 @@ export default function ProductsPage() {
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Mã sản phẩm *</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="VD: NUOC-COCA-330"
-                value={formData.productCode}
-                onChange={(e) => setFormData({ ...formData, productCode: e.target.value.toUpperCase() })}
-                required
-              />
-            </div>
-
+          <div className="form-grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Tên sản phẩm *</label>
               <input
@@ -481,13 +549,91 @@ export default function ProductsPage() {
                 className="form-control"
                 placeholder="VD: Coca Cola lon 330ml"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => handleProductNameChange(e.target.value)}
                 required
               />
             </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="form-label">Mã sản phẩm *</label>
+                <button
+                  type="button"
+                  onClick={handleGenerateCodeClick}
+                  className="btn btn-secondary"
+                  style={{ padding: '2px 8px', fontSize: '11px', height: '22px', gap: '4px' }}
+                  title="Tự động tạo mã dựa trên tên sản phẩm"
+                >
+                  <Sparkles size={12} color="var(--primary)" />
+                  <span>Tự tạo mã</span>
+                </button>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  className="form-control"
+                  style={{
+                    paddingRight: '36px',
+                    borderColor: codeCheckResult
+                      ? (codeCheckResult.available ? 'var(--success)' : 'var(--danger)')
+                      : undefined
+                  }}
+                  placeholder="VD: COCA-COLA-LON-330ML"
+                  value={formData.productCode}
+                  onChange={(e) => handleProductCodeChange(e.target.value)}
+                  required
+                />
+                <div style={{ position: 'absolute', right: '10px', top: '12px' }}>
+                  {codeCheckLoading ? (
+                    <RefreshCw size={15} className="spin" color="var(--text-muted)" />
+                  ) : codeCheckResult ? (
+                    codeCheckResult.available ? (
+                      <CheckCircle2 size={16} color="var(--success)" title="Mã hợp lệ" />
+                    ) : (
+                      <AlertCircle size={16} color="var(--danger)" title="Mã đã tồn tại" />
+                    )
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Duplicate code alert feedback */}
+              {codeCheckResult && !codeCheckResult.available && (
+                <div style={{
+                  marginTop: '6px',
+                  padding: '8px 10px',
+                  backgroundColor: 'var(--danger-bg)',
+                  border: '1px solid var(--danger)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '12px',
+                  color: 'var(--danger)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                    <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <span>{codeCheckResult.message}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFixDuplicateCode}
+                    className="btn btn-secondary"
+                    style={{ padding: '4px 8px', fontSize: '11px', alignSelf: 'flex-start' }}
+                  >
+                    + Đổi mã (Thêm đuôi -01, -02)
+                  </button>
+                </div>
+              )}
+
+              {codeCheckResult && codeCheckResult.available && (
+                <div style={{ fontSize: '12px', color: 'var(--success)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Check size={13} /> Mã hợp lệ, có thể sử dụng.
+                </div>
+              )}
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="form-grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Danh mục</label>
               <select
@@ -514,7 +660,7 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="form-grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Giá vốn (VNĐ)</label>
               <input
@@ -541,7 +687,7 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="form-grid-2">
             {!editingProduct && (
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Số lượng tồn kho ban đầu</label>

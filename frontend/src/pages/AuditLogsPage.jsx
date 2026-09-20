@@ -35,7 +35,7 @@ export default function AuditLogsPage() {
   return (
     <div className="page-container">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="page-header-responsive">
         <div>
           <h1 style={{ fontSize: '22px' }}>Nhật Ký Kiểm Toán (Audit Log)</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
@@ -55,7 +55,7 @@ export default function AuditLogsPage() {
 
       {/* Filter Bar */}
       <div className="card" style={{ padding: '14px', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="filter-bar-responsive">
           <select
             className="form-control"
             style={{ width: 'auto', minWidth: '180px' }}
@@ -91,7 +91,7 @@ export default function AuditLogsPage() {
 
       {/* Table */}
       <div className="table-responsive">
-        <table className="table">
+        <table className="table table-wide">
           <thead>
             <tr>
               <th>Thời Gian</th>

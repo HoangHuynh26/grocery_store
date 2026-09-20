@@ -101,7 +101,7 @@ export default function InvoicesPage() {
   return (
     <div className="page-container">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="page-header-responsive">
         <div>
           <h1 style={{ fontSize: '22px' }}>Quản Lý Hóa Đơn Bán Hàng</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
@@ -121,7 +121,7 @@ export default function InvoicesPage() {
 
       {/* Filter Bar */}
       <div className="card" style={{ padding: '14px', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="filter-bar-responsive">
           <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
             <input
               type="text"
@@ -149,7 +149,7 @@ export default function InvoicesPage() {
 
       {/* Invoices Table */}
       <div className="table-responsive">
-        <table className="table">
+        <table className="table table-wide">
           <thead>
             <tr>
               <th>Số Hóa Đơn</th>
@@ -248,7 +248,7 @@ export default function InvoicesPage() {
             {/* Meta header */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
               gap: '10px',
               padding: '12px 14px',
               backgroundColor: 'var(--bg-card-secondary)',

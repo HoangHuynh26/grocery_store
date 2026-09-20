@@ -126,7 +126,7 @@ export default function DashboardPage() {
         gap: '8px',
         marginBottom: '24px'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div className="page-header-responsive">
           <div>
             <h1 style={{ fontSize: '22px' }}>Bảng Điều Khiển Kinh Doanh</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
@@ -135,7 +135,7 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <Link to="/ai-assistant" className="btn btn-primary" style={{ padding: '8px 14px', fontSize: '13px' }}>
+            <Link to="/ai-assistant" className="btn btn-primary" style={{ padding: '8px 14px', fontSize: '13px', flex: 1, justifyContent: 'center' }}>
               <Bot size={16} />
               <span>Hỏi Trợ Lý AI</span>
             </Link>
@@ -143,7 +143,7 @@ export default function DashboardPage() {
               onClick={fetchDashboardData}
               className="btn btn-secondary btn-icon"
               title="Làm mới dữ liệu"
-              style={{ width: '38px', height: '38px' }}
+              style={{ width: '38px', height: '38px', flexShrink: 0 }}
             >
               <RefreshCw size={16} className={loading ? 'spin' : ''} />
             </button>
@@ -154,9 +154,9 @@ export default function DashboardPage() {
       {/* Primary KPI Metrics Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '16px',
-        marginBottom: '24px'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
+        gap: '12px',
+        marginBottom: '20px'
       }}>
         {/* Today's Revenue */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -310,7 +310,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom Grid: Top Selling Products & Low Stock Items */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
         {/* Top Selling Products */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

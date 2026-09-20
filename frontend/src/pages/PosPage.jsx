@@ -117,32 +117,32 @@ export default function PosPage() {
         display: 'flex',
         flexDirection: 'column',
         overflowY: 'auto',
-        padding: '16px',
-        paddingBottom: '80px'
+        padding: '12px',
+        paddingBottom: 'calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 75px)'
       }}>
         {/* Top Controls: Search Bar & QR Scanner Trigger */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
           <div style={{ position: 'relative', flex: 1 }}>
             <input
               type="text"
               className="form-control"
-              style={{ paddingLeft: '40px', height: '46px', fontSize: '15px' }}
-              placeholder="Tìm tên món, mã sản phẩm hoặc danh mục..."
+              style={{ paddingLeft: '38px', height: '44px', fontSize: '14px' }}
+              placeholder="Tìm tên món, mã SP..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '14px' }} />
+            <Search size={17} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
           </div>
 
           <button
             type="button"
             className="btn btn-primary"
             onClick={() => setIsScannerOpen(true)}
-            style={{ height: '46px', padding: '0 18px', flexShrink: 0 }}
+            style={{ height: '44px', padding: '0 14px', flexShrink: 0 }}
             title="Quét QR Camera"
           >
-            <QrCode size={20} />
-            <span style={{ fontWeight: 700 }}>Quét QR</span>
+            <QrCode size={18} />
+            <span style={{ fontWeight: 700, fontSize: '13px' }}>Quét QR</span>
           </button>
         </div>
 
@@ -151,8 +151,9 @@ export default function PosPage() {
           display: 'flex',
           gap: '8px',
           overflowX: 'auto',
-          paddingBottom: '12px',
-          marginBottom: '16px'
+          paddingBottom: '10px',
+          marginBottom: '14px',
+          WebkitOverflowScrolling: 'touch'
         }}>
           <button
             type="button"
@@ -188,11 +189,7 @@ export default function PosPage() {
             <div style={{ fontSize: '13px', marginTop: '4px' }}>Thử tìm kiếm với từ khóa khác hoặc quét mã QR.</div>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-            gap: '12px'
-          }}>
+          <div className="pos-product-grid">
             {filteredProducts.map((p) => {
               const isOutOfStock = p.stock_quantity <= 0;
               const isLowStock = p.stock_quantity > 0 && p.stock_quantity <= p.minimum_stock;
@@ -206,7 +203,7 @@ export default function PosPage() {
                     backgroundColor: 'var(--bg-card)',
                     border: isAdded ? '1px solid var(--primary)' : '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-lg)',
-                    padding: '14px',
+                    padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
@@ -329,38 +326,38 @@ export default function PosPage() {
       {totalUnits > 0 && (
         <div style={{
           position: 'fixed',
-          bottom: 'calc(var(--mobile-nav-height) + 12px)',
-          left: '16px',
-          right: '16px',
+          bottom: 'calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 10px)',
+          left: '12px',
+          right: '12px',
           backgroundColor: 'var(--primary)',
           color: '#ffffff',
           borderRadius: 'var(--radius-lg)',
-          padding: '14px 20px',
+          padding: '12px 18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)',
+          boxShadow: '0 8px 24px rgba(16, 185, 129, 0.45)',
           zIndex: 750,
           cursor: 'pointer'
         }}
         className="mobile-cart-bar"
         onClick={() => setIsMobileCartOpen(true)}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{
               backgroundColor: '#ffffff',
               color: 'var(--primary)',
               borderRadius: 'var(--radius-full)',
-              padding: '2px 10px',
+              padding: '2px 9px',
               fontWeight: 800,
               fontSize: '13px'
             }}>
               {totalUnits}
             </span>
-            <span style={{ fontWeight: 600, fontSize: '14px' }}>Món trong giỏ</span>
+            <span style={{ fontWeight: 600, fontSize: '13px' }}>Món trong giỏ</span>
           </div>
 
-          <div style={{ fontWeight: 800, fontSize: '17px' }}>
+          <div style={{ fontWeight: 800, fontSize: '16px' }}>
             {formatCurrency(totalAmount)}
           </div>
         </div>
@@ -374,10 +371,11 @@ export default function PosPage() {
           backgroundColor: 'var(--bg-main)',
           zIndex: 1000,
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)'
         }}>
           <div style={{
-            padding: '14px 20px',
+            padding: '14px 18px',
             backgroundColor: 'var(--bg-card)',
             borderBottom: '1px solid var(--border-color)',
             display: 'flex',
@@ -388,7 +386,7 @@ export default function PosPage() {
             <button
               onClick={() => setIsMobileCartOpen(false)}
               className="btn btn-secondary"
-              style={{ padding: '6px 12px', fontSize: '13px' }}
+              style={{ padding: '6px 14px', fontSize: '13px' }}
             >
               Đóng
             </button>
@@ -417,6 +415,9 @@ export default function PosPage() {
         @media (min-width: 1024px) {
           .desktop-cart-panel { display: block !important; }
           .mobile-cart-bar { display: none !important; }
+        }
+        @media (max-width: 640px) {
+          .product-card { padding: 10px !important; }
         }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }

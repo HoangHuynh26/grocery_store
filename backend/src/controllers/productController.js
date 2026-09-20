@@ -44,6 +44,19 @@ class ProductController {
     }
   }
 
+  static async checkCodeAvailability(req, res, next) {
+    try {
+      const { code, excludeId } = req.query;
+      const result = await ProductService.checkCodeUniqueness(code, excludeId);
+      return res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async getByQrToken(req, res, next) {
     try {
       const product = await ProductService.getProductByQrToken(req.params.token);

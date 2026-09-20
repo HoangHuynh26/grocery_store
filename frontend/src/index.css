@@ -235,7 +235,7 @@ h1, h2, h3, h4, h5 {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding-bottom: calc(var(--mobile-nav-height) + 20px);
+  padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
 }
 
 @media (min-width: 1024px) {
@@ -245,7 +245,7 @@ h1, h2, h3, h4, h5 {
 }
 
 .page-container {
-  padding: 16px;
+  padding: 12px;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
@@ -257,30 +257,39 @@ h1, h2, h3, h4, h5 {
   }
 }
 
-/* Table styling */
+/* Responsive Table styling */
 .table-responsive {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   background: var(--bg-card);
+  position: relative;
 }
 .table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
   text-align: left;
   font-size: 14px;
 }
+.table-compact {
+  min-width: 540px;
+}
+.table-wide {
+  min-width: 780px;
+}
 .table th {
   background-color: var(--bg-card-secondary);
-  padding: 14px 16px;
+  padding: 12px 14px;
   font-weight: 600;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
 }
 .table td {
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-primary);
 }
@@ -289,6 +298,72 @@ h1, h2, h3, h4, h5 {
 }
 .table tr:hover td {
   background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Responsive Form Grids */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+}
+
+/* Responsive Headers & Filters */
+.page-header-responsive {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .page-header-responsive {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px;
+  }
+  .page-header-responsive .btn-primary,
+  .page-header-responsive .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.filter-bar-responsive {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .filter-bar-responsive {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .filter-bar-responsive > div,
+  .filter-bar-responsive > select {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+}
+
+/* POS Product Grid */
+.pos-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .pos-product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
 }
 
 /* Modal backdrop & container */
@@ -303,6 +378,13 @@ h1, h2, h3, h4, h5 {
   padding: 16px;
   backdrop-filter: blur(2px);
 }
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 8px;
+    align-items: flex-end;
+  }
+}
+
 .modal-content {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -315,6 +397,13 @@ h1, h2, h3, h4, h5 {
   box-shadow: var(--shadow-lg);
   animation: modalPop 0.15s ease-out;
 }
+@media (max-width: 640px) {
+  .modal-content {
+    max-height: 94vh;
+    border-radius: 16px 16px 0 0;
+  }
+}
+
 @keyframes modalPop {
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
@@ -324,19 +413,32 @@ h1, h2, h3, h4, h5 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 24px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border-color);
 }
-.modal-body {
-  padding: 24px;
-  overflow-y: auto;
+@media (max-width: 640px) {
+  .modal-header {
+    padding: 12px 16px;
+  }
 }
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 640px) {
+  .modal-body {
+    padding: 14px;
+  }
+}
+
 .modal-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  padding: 16px 24px;
+  padding: 14px 20px;
   border-top: 1px solid var(--border-color);
   background-color: var(--bg-card-secondary);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
