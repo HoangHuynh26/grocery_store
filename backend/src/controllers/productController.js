@@ -32,6 +32,19 @@ class ProductController {
     }
   }
 
+  static async getTopSelling(req, res, next) {
+    try {
+      const limit = parseInt(req.query.limit || '10', 10);
+      const products = await ProductService.getTopSellingProducts(limit);
+      return res.status(200).json({
+        success: true,
+        data: products
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async getById(req, res, next) {
     try {
       const product = await ProductService.getProductById(req.params.id);

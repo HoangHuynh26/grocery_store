@@ -6,6 +6,7 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 router.use(authenticateToken);
 
 router.get('/', ProductController.list);
+router.get('/top-selling', ProductController.getTopSelling);
 router.get('/check-code', ProductController.checkCodeAvailability);
 router.get('/qr/:token', ProductController.getByQrToken);
 router.get('/:id', ProductController.getById);

@@ -325,6 +325,20 @@ async function runTests() {
     'Inventory transaction recorded as IMPORT'
   );
 
+  // TEST 11: POS Top-Selling Products (Top 10)
+  console.log('\n[11] Testing POS Top-Selling Products Endpoint...');
+  const topSellingRes = await request('/products/top-selling?limit=10', {
+    headers: { Authorization: `Bearer ${staffToken}` }
+  });
+  assert(topSellingRes.status === 200, 'Top-selling products returns 200 OK');
+  assert(Array.isArray(topSellingRes.data.data), 'Top-selling data is an array');
+  assert(topSellingRes.data.data.length <= 10, `Returned at most 10 items (got ${topSellingRes.data.data.length})`);
+  if (topSellingRes.data.data.length > 0) {
+    const firstItem = topSellingRes.data.data[0];
+    assert(typeof firstItem.total_sold === 'number', `Top item has total_sold numeric attribute: ${firstItem.total_sold}`);
+    assert(!!firstItem.name, `Top item has product name: ${firstItem.name}`);
+  }
+
   console.log('\n====================================================');
   console.log(` TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================');

@@ -208,6 +208,31 @@ async function softDeleteProduct(id, userId) {
   return res.rows[0] || null;
 }
 
+async function getTopSellingProducts({ limit = 10 } = {}) {
+  const sql = `
+    SELECT 
+      p.*,
+      c.name as category_name,
+      c.slug as category_slug,
+      COALESCE(sales.total_sold, 0)::int as total_sold,
+      CASE WHEN p.stock_quantity <= p.minimum_stock THEN TRUE ELSE FALSE END as is_low_stock
+    FROM products p
+    LEFT JOIN (
+      SELECT product_id, SUM(quantity) as total_sold
+      FROM invoice_items ii
+      JOIN invoices i ON ii.invoice_id = i.id
+      WHERE i.status != 'CANCELLED'
+      GROUP BY product_id
+    ) sales ON p.id = sales.product_id
+    LEFT JOIN categories c ON p.category_id = c.id
+    WHERE p.is_active = TRUE
+    ORDER BY COALESCE(sales.total_sold, 0) DESC, p.stock_quantity DESC, p.name ASC
+    LIMIT $1;
+  `;
+  const res = await query(sql, [limit]);
+  return res.rows;
+}
+
 module.exports = {
   listProducts,
   findById,
@@ -215,5 +240,6 @@ module.exports = {
   findByQrToken,
   createProduct,
   updateProduct,
-  softDeleteProduct
+  softDeleteProduct,
+  getTopSellingProducts
 };
