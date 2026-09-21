@@ -12,6 +12,7 @@ const {
 const { generateQrToken } = require('../utils/idGenerator');
 const { createAuditLog } = require('../repositories/auditRepository');
 const { AppError } = require('../middleware/errorHandler');
+const { EmbeddingService } = require('../modules/ai/embedding/embeddingService');
 
 class ProductService {
   static async getProducts(filters) {
@@ -132,6 +133,13 @@ class ProductService {
       userAgent
     });
 
+    // Automatically generate and update embedding for the new product
+    try {
+      await EmbeddingService.updateProductEmbedding(created.id);
+    } catch (embErr) {
+      console.warn('[Embedding] Auto embedding creation warning:', embErr.message);
+    }
+
     return created;
   }
 
@@ -173,6 +181,13 @@ class ProductService {
       ipAddress: clientIp,
       userAgent
     });
+
+    // Automatically update embedding when product is modified
+    try {
+      await EmbeddingService.updateProductEmbedding(id);
+    } catch (embErr) {
+      console.warn('[Embedding] Auto embedding update warning:', embErr.message);
+    }
 
     return updated;
   }

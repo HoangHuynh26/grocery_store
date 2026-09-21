@@ -28,6 +28,7 @@ Chào mừng bạn đến với bộ tài liệu kỹ thuật chi tiết của h
 | 18 | [18_POS_TOP_SELLING_PRODUCTS.md](./18_POS_TOP_SELLING_PRODUCTS.md) | Mục Top 10 sản phẩm bán chạy nhất trên màn hình POS, Thao tác 1-Click thêm nhanh & Đồng bộ realtime |
 | 19 | [19_MOBILE_POS_CLIPPING_LAYOUT_FIX.md](./19_MOBILE_POS_CLIPPING_LAYOUT_FIX.md) | Khắc phục triệt để lỗi tràn chiều ngang & mất góc trái màn hình POS di động |
 | 20 | [20_AI_SPECIFIC_HOUR_REVENUE_AND_CLEAN_FORMAT.md](./20_AI_SPECIFIC_HOUR_REVENUE_AND_CLEAN_FORMAT.md) | Tra cứu doanh thu theo giờ cụ thể & Chuẩn hóa văn bản không dấu sao (*) của Trợ lý AI |
+| 21 | [21_PRODUCT_EMBEDDING_AND_MIDNIGHT_SCHEDULER.md](./21_PRODUCT_EMBEDDING_AND_MIDNIGHT_SCHEDULER.md) | Tự động cập nhật embedding sản phẩm khi thêm mới & Lịch định kỳ 12 giờ tối (Midnight Cron) |
 
 ---
 

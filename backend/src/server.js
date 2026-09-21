@@ -5,6 +5,7 @@ const config = require('./config/env');
 const { initDb } = require('./database');
 const { seedDatabase } = require('./database/seed');
 const { initSocket } = require('./services/socketService');
+const cronScheduler = require('./modules/ai/embedding/cronScheduler');
 
 async function startServer() {
   try {
@@ -40,6 +41,9 @@ async function startServer() {
       console.log(`[Auth] Default Super Admin: admin / Admin@123456`);
       console.log(`[Auth] Default Cashier Admin: nhanvien1 / Staff@123456`);
       console.log('====================================================');
+
+      // 5. Activate 12:00 AM Midnight Daily Product Embedding Scheduler
+      cronScheduler.start();
     });
 
     // Graceful shutdown handling

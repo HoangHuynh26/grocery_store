@@ -367,6 +367,74 @@ async function runTests() {
     assert(!!firstItem.name, `Top item has product name: ${firstItem.name}`);
   }
 
+  // TEST 12: Product Embeddings & 12:00 AM Midnight Auto-Sync
+  console.log('\n[12] Testing Product Embeddings & 12:00 AM Midnight Auto-Sync...');
+  
+  // 12.1 Check Embedding Status & Scheduler Info
+  const embStatus = await request('/ai/embeddings/status', {
+    headers: { Authorization: `Bearer ${adminToken}` }
+  });
+  assert(embStatus.status === 200, 'Embedding status endpoint returns 200 OK');
+  assert(embStatus.data.data.embeddedProducts > 0, `Products with embeddings verified: ${embStatus.data.data.embeddedProducts}`);
+  assert(embStatus.data.data.dimensions === 128, 'Vector dimensions verified: 128');
+  assert(
+    embStatus.data.data.scheduler.targetTimeDaily.includes('12:00 AM'),
+    `Scheduler target time verified: ${embStatus.data.data.scheduler.targetTimeDaily}`
+  );
+  assert(
+    embStatus.data.data.scheduler.timezone.includes('Asia/Ho_Chi_Minh'),
+    `Scheduler timezone verified: ${embStatus.data.data.scheduler.timezone}`
+  );
+
+  // 12.2 Test Manual Sync Execution
+  const embSync = await request('/ai/embeddings/sync', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ force: true })
+  });
+  assert(embSync.status === 200, 'Manual embedding sync returns 200 OK');
+  assert(embSync.data.data.updatedCount > 0, `Embeddings synchronized for ${embSync.data.data.updatedCount} products`);
+
+  // 12.3 Test Auto-Embedding on New Product Creation
+  const newUniqueCode = `EMB-AUTO-${Date.now()}`;
+  const createProdRes = await request('/products', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({
+      productCode: newUniqueCode,
+      name: 'Nước tăng lực Redbull Thái lon 250ml',
+      costPrice: 11000,
+      sellingPrice: 15000,
+      stockQuantity: 40,
+      unit: 'lon',
+      description: 'Nước tăng lực nhập khẩu Thái Lan'
+    })
+  });
+  assert(createProdRes.status === 201, 'New product created returns 201');
+
+  // Verify embedding was automatically generated for this new product
+  const { query: dbQuery } = require('./src/database');
+  const checkNewProd = await dbQuery('SELECT embedding, embedding_updated_at FROM products WHERE id = $1', [createProdRes.data.data.id]);
+  const newProdEmb = typeof checkNewProd.rows[0].embedding === 'string' ? JSON.parse(checkNewProd.rows[0].embedding) : checkNewProd.rows[0].embedding;
+  assert(
+    !!newProdEmb && Array.isArray(newProdEmb.vector) && newProdEmb.vector.length === 128,
+    'New product automatically received 128-D vector embedding upon creation'
+  );
+  assert(!!checkNewProd.rows[0].embedding_updated_at, 'Embedding timestamp recorded for new product');
+
+  // 12.4 Test Semantic Embedding Vector Search
+  const semanticSearchRes = await request('/ai/embeddings/search', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${staffToken}` },
+    body: JSON.stringify({ query: 'redbull tăng lực giải khát', limit: 3 })
+  });
+  assert(semanticSearchRes.status === 200, 'Semantic vector search returns 200 OK');
+  assert(Array.isArray(semanticSearchRes.data.data) && semanticSearchRes.data.data.length > 0, 'Semantic search returned ranked matches');
+  assert(
+    semanticSearchRes.data.data[0].similarity > 0.4,
+    `Top semantic match "${semanticSearchRes.data.data[0].name}" has high cosine similarity: ${semanticSearchRes.data.data[0].similarity}`
+  );
+
   console.log('\n====================================================');
   console.log(` TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================');

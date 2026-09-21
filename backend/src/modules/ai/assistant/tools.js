@@ -48,6 +48,27 @@ const tools = {
         const codeClean = removeVietnameseAccents(p.product_code.toLowerCase());
         return pClean.includes(clean) || codeClean.includes(clean);
       }).slice(0, 10);
+
+      // Semantic Embedding Vector Search Fallback
+      if (products.length === 0) {
+        try {
+          const { EmbeddingService } = require('../embedding/embeddingService');
+          const semanticMatches = await EmbeddingService.searchSimilarProducts(raw, 5);
+          if (semanticMatches.length > 0 && semanticMatches[0].similarity >= 0.4) {
+            products = semanticMatches.map(p => ({
+              id: p.id,
+              product_code: p.productCode,
+              name: p.name,
+              selling_price: p.sellingPrice,
+              stock_quantity: p.stockQuantity,
+              unit: p.unit,
+              category_name: p.categoryName
+            }));
+          }
+        } catch (e) {
+          // safe fallback
+        }
+      }
     }
 
     return {
