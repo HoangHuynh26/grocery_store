@@ -1,6 +1,8 @@
 const LangGraphAgent = require('../modules/ai/assistant/langGraphAgent');
 const ForecastService = require('../modules/ai/forecasting/forecastService');
 const ProductClassifier = require('../modules/ai/classifier/productClassifier');
+const { EmbeddingService } = require('../modules/ai/embedding/embeddingService');
+const cronScheduler = require('../modules/ai/embedding/cronScheduler');
 const { query } = require('../database');
 const { createAuditLog } = require('../repositories/auditRepository');
 const { AppError } = require('../middleware/errorHandler');
@@ -112,6 +114,49 @@ class AiController {
       return res.status(200).json({
         success: true,
         data: result
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async getEmbeddingStatus(req, res, next) {
+    try {
+      const stats = await EmbeddingService.getEmbeddingStats();
+      const schedulerStatus = cronScheduler.getStatus();
+      return res.status(200).json({
+        success: true,
+        data: {
+          ...stats,
+          scheduler: schedulerStatus
+        }
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async syncEmbeddings(req, res, next) {
+    try {
+      const force = req.body.force !== undefined ? req.body.force : true;
+      const stats = await cronScheduler.triggerManualRun({ force });
+      return res.status(200).json({
+        success: true,
+        data: stats,
+        message: `Đã hoàn tất cập nhật embedding cho ${stats.updatedCount} sản phẩm.`
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async semanticSearch(req, res, next) {
+    try {
+      const { query: queryText, limit = 5 } = req.body;
+      const results = await EmbeddingService.searchSimilarProducts(queryText, limit);
+      return res.status(200).json({
+        success: true,
+        data: results
       });
     } catch (err) {
       next(err);

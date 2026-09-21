@@ -83,11 +83,17 @@ CREATE TABLE IF NOT EXISTS products (
     qr_code_token VARCHAR(255) UNIQUE,
     has_qr BOOLEAN NOT NULL DEFAULT TRUE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    embedding JSONB,
+    embedding_updated_at TIMESTAMPTZ,
     created_by UUID REFERENCES users(id) ON DELETE SET NULL,
     updated_by UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration safety for existing products table
+ALTER TABLE products ADD COLUMN IF NOT EXISTS embedding JSONB;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS embedding_updated_at TIMESTAMPTZ;
 
 -- Bảng Hóa đơn bán hàng (Immutable Invoices với Idempotency Key)
 CREATE TABLE IF NOT EXISTS invoices (

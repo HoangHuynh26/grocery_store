@@ -68,11 +68,17 @@ CREATE TABLE IF NOT EXISTS products (
     qr_code_token VARCHAR(100) UNIQUE,
     has_qr BOOLEAN NOT NULL DEFAULT TRUE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    embedding JSONB,
+    embedding_updated_at TIMESTAMPTZ,
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration safety for existing tables
+ALTER TABLE products ADD COLUMN IF NOT EXISTS embedding JSONB;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS embedding_updated_at TIMESTAMPTZ;
 
 -- Inventory Transactions table (Stock History)
 CREATE TABLE IF NOT EXISTS inventory_transactions (
