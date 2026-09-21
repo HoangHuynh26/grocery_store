@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Tags, Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
 import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import ToggleSwitch from '../components/common/ToggleSwitch';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
@@ -87,6 +88,21 @@ export default function CategoriesPage() {
     }
   };
 
+  const handleToggleCategoryStatus = async (cat) => {
+    const nextActive = !cat.is_active;
+    // Optimistic UI update
+    setCategories((prev) =>
+      prev.map((c) => (c.id === cat.id ? { ...c, is_active: nextActive } : c))
+    );
+
+    try {
+      await api.put(`/categories/${cat.id}`, { isActive: nextActive });
+    } catch (err) {
+      alert(err.message || 'Không thể thay đổi trạng thái danh mục.');
+      loadCategories();
+    }
+  };
+
   return (
     <div className="page-container">
       {/* Header */}
@@ -158,9 +174,12 @@ export default function CategoriesPage() {
                     </span>
                   </td>
                   <td>
-                    <span className={`badge ${cat.is_active ? 'badge-success' : 'badge-danger'}`}>
-                      {cat.is_active ? 'Hoạt động' : 'Tạm ngưng'}
-                    </span>
+                    <ToggleSwitch
+                      checked={cat.is_active}
+                      onChange={() => handleToggleCategoryStatus(cat)}
+                      label={cat.is_active ? 'Đang hoạt động' : 'Tạm ngưng'}
+                      size="sm"
+                    />
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: '6px' }}>

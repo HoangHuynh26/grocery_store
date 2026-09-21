@@ -24,6 +24,7 @@ Chào mừng bạn đến với bộ tài liệu kỹ thuật chi tiết của h
 | 14 | [14_MOBILE_RESPONSIVENESS_AND_SMART_CODE.md](./14_MOBILE_RESPONSIVENESS_AND_SMART_CODE.md) | Tối ưu hóa giao diện di động toàn diện & Thuật toán tự sinh mã sản phẩm kèm kiểm tra trùng lặp thời gian thực |
 | 15 | [15_AI_PRODUCT_CLASSIFICATION_AND_IMPORT.md](./15_AI_PRODUCT_CLASSIFICATION_AND_IMPORT.md) | Phân loại danh mục tự động bằng AI, Gợi ý đơn vị tính, Sinh mã SKU và Nhập hàng thông minh |
 | 16 | [16_LOGIN_IP_GEOLOCATION.md](./16_LOGIN_IP_GEOLOCATION.md) | Trích xuất IP khách, Định vị vị trí địa lý & khu vực truy cập (IP Geolocation), Lưu vết lịch sử đăng nhập |
+| 17 | [17_LIGHT_THEME_LIQUID_GLASS_TOGGLES.md](./17_LIGHT_THEME_LIQUID_GLASS_TOGGLES.md) | Giao diện sáng (Light Theme), Thanh điều hướng Apple Liquid Glass & Nút công tắc gạt Toggle Switch |
 
 ---
 
