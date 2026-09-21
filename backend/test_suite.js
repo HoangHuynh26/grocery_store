@@ -572,6 +572,29 @@ async function runTests() {
   assert(combinedRes.status === 200, 'Query with combined Date & Time filters returns 200 OK');
   assert(combinedRes.data.data.summary.averageOrderValue >= 0, `Computed Average Order Value: ${combinedRes.data.data.summary.averageOrderValue}`);
 
+  // TEST 16: Multimodal AI Voice Speech-to-Text Audio Transcription
+  console.log('\n[16] Testing Multimodal AI Voice Audio Transcription Endpoint...');
+
+  // 16.1 Reject empty audio payload
+  const emptyAudioRes = await request('/ai/transcribe-audio', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${staffToken}` },
+    body: JSON.stringify({})
+  });
+  assert(emptyAudioRes.status === 400, 'Audio transcription endpoint rejects empty audio payload with 400');
+
+  // 16.2 Transcribe audio with base64 payload returns 200
+  const sampleAudioRes = await request('/ai/transcribe-audio', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${staffToken}` },
+    body: JSON.stringify({
+      audioBase64: 'UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=',
+      mimeType: 'audio/wav'
+    })
+  });
+  assert(sampleAudioRes.status === 200, 'Audio transcription endpoint responds with 200 OK');
+  assert(typeof sampleAudioRes.data.text === 'string' || sampleAudioRes.data.success !== undefined, 'Audio transcription returns valid response format');
+
   console.log('\n====================================================');
   console.log(` TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================');

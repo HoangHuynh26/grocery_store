@@ -25,7 +25,11 @@ import {
   CheckCircle2,
   AlertCircle,
   BarChart3,
-  History
+  History,
+  Volume2,
+  VolumeX,
+  Mic,
+  MicOff
 } from 'lucide-react';
 
 function cleanAiText(text) {
@@ -57,6 +61,9 @@ export default function AiAssistantPage() {
   const [isReasonActive, setIsReasonActive] = useState(false);
   const [isAttachOpen, setIsAttachOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [speakingId, setSpeakingId] = useState(null);
+  const [voiceError, setVoiceError] = useState(null);
 
   // Self-learning modal & stats states
   const [isLearningModalOpen, setIsLearningModalOpen] = useState(false);
@@ -67,6 +74,8 @@ export default function AiAssistantPage() {
 
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const textareaRef = useRef(null);
 
   const quickPresets = [
@@ -128,58 +137,250 @@ export default function AiAssistantPage() {
     scrollToBottom();
   }, [messages, loading]);
 
-  // Handle Speech Recognition (Web Speech API in Vietnamese)
-  const toggleVoice = () => {
-    const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        try { mediaRecorderRef.current.stop(); } catch (e) {}
+      }
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
-    if (!SpeechRecognition) {
-      alert('Trình duyệt hiện tại chưa hỗ trợ Web Speech API. Bạn có thể sử dụng Google Chrome hoặc Microsoft Edge để nói tiếng Việt.');
+  // MediaRecorder Fallback to Gemini Multimodal Audio Transcribe API
+  const startMediaRecorderFallback = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setVoiceError('Trình duyệt không hỗ trợ thu âm Microphone.');
       return;
     }
 
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+
+      let mimeType = 'audio/webm';
+      if (typeof MediaRecorder !== 'undefined') {
+        if (!MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '';
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        setIsListening(false);
+        stream.getTracks().forEach((track) => track.stop());
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/webm' });
+        if (audioBlob.size < 500) {
+          return;
+        }
+
+        try {
+          setTranscribing(true);
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64data = reader.result;
+            try {
+              const res = await api.post('/ai/transcribe-audio', {
+                audioBase64: base64data,
+                mimeType: mimeType || 'audio/webm'
+              });
+
+              if (res.data?.success && res.data?.text) {
+                setInputValue((prev) => (prev ? prev.trim() + ' ' + res.data.text : res.data.text));
+                if (textareaRef.current) {
+                  textareaRef.current.style.height = 'auto';
+                  textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+                }
+              } else if (res.data?.message) {
+                setVoiceError(res.data.message);
+              }
+            } catch (apiErr) {
+              setVoiceError('Không thể chuyển giọng nói qua Gemini AI. Vui lòng thử lại.');
+            } finally {
+              setTranscribing(false);
+            }
+          };
+        } catch (readErr) {
+          setTranscribing(false);
+        }
+      };
+
+      mediaRecorder.start(250);
+      setIsListening(true);
+      setVoiceError(null);
+    } catch (micErr) {
+      console.warn('[VoiceAI] MediaRecorder getUserMedia failed:', micErr);
+      setIsListening(false);
+      if (micErr.name === 'NotAllowedError' || micErr.name === 'PermissionDeniedError') {
+        setVoiceError('Bạn chưa cho phép quyền Micro. Vui lòng nhấn vào biểu tượng ổ khóa/cài đặt trên trình duyệt để Cho Phép (Allow) Micro.');
+      } else {
+        setVoiceError(`Lỗi kết nối Micro: ${micErr.message || 'Không thể mở thiết bị thu âm.'}`);
+      }
+    }
+  };
+
+  // Smart Speech-to-Text Controller (Web Speech API + Gemini Fallback + Insecure Context Guard)
+  const toggleVoice = async () => {
+    setVoiceError(null);
+
+    // If already listening, stop
     if (isListening) {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        try { mediaRecorderRef.current.stop(); } catch (e) {}
       }
       setIsListening(false);
       return;
     }
 
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'vi-VN';
-      recognition.interimResults = true;
-      recognition.continuous = false;
+    // Check if insecure context over LAN IP on mobile
+    const isLocalhost = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const isSecure = typeof window !== 'undefined' && (window.isSecureContext || isLocalhost);
 
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
-
-      recognition.onresult = (event) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        if (transcript) {
-          setInputValue((prev) => (prev ? prev.trim() + ' ' + transcript : transcript));
-        }
-      };
-
-      recognition.onerror = (e) => {
-        console.warn('Speech recognition error:', e);
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch (err) {
-      console.error('Failed to start speech recognition:', err);
-      setIsListening(false);
+    if (!isSecure) {
+      setVoiceError(
+        'Trình duyệt di động yêu cầu bảo mật HTTPS hoặc localhost để truy cập Micro. Khi truy cập qua IP mạng LAN (HTTP), trình duyệt bảo mật chặn Micro. Bạn hãy nhập bằng phím hoặc mở qua localhost/HTTPS.'
+      );
+      return;
     }
+
+    const SpeechRecognition = typeof window !== 'undefined'
+      ? (window.SpeechRecognition || window.webkitSpeechRecognition)
+      : null;
+
+    // Strategy 1: Native Web Speech Recognition (Chrome / Edge / Safari Desktop)
+    if (SpeechRecognition) {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'vi-VN';
+        recognition.interimResults = true;
+        recognition.continuous = false;
+
+        let accumulatedFinal = '';
+
+        recognition.onstart = () => {
+          setIsListening(true);
+          setVoiceError(null);
+        };
+
+        recognition.onresult = (event) => {
+          let interim = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              accumulatedFinal += (accumulatedFinal ? ' ' : '') + transcript;
+            } else {
+              interim = transcript;
+            }
+          }
+          const displayText = accumulatedFinal + (interim ? ' ' + interim : '');
+          if (displayText) {
+            setInputValue(displayText);
+            if (textareaRef.current) {
+              textareaRef.current.style.height = 'auto';
+              textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+            }
+          }
+        };
+
+        recognition.onerror = (e) => {
+          console.warn('[VoiceAI] Speech recognition error:', e.error);
+          setIsListening(false);
+          if (e.error === 'not-allowed') {
+            setVoiceError('Trình duyệt chưa được cấp quyền Micro. Vui lòng bấm vào biểu tượng Micro/Khóa trên thanh địa chỉ và chọn Cho phép (Allow).');
+          } else if (e.error === 'no-speech') {
+            setVoiceError('Chưa nhận được âm thanh giọng nói. Vui lòng thử lại gần micro hơn.');
+          } else if (e.error === 'network') {
+            // Fallback to MediaRecorder Gemini
+            startMediaRecorderFallback();
+          } else {
+            startMediaRecorderFallback();
+          }
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+        return;
+      } catch (err) {
+        console.warn('[VoiceAI] SpeechRecognition start error, switching to MediaRecorder:', err);
+      }
+    }
+
+    // Strategy 2: MediaRecorder with Gemini Multimodal Transcription fallback
+    startMediaRecorderFallback();
+  };
+
+  // Text-To-Speech (AI Voice Synthesis in Vietnamese)
+  const toggleSpeak = (id, text) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      alert('Trình duyệt này không hỗ trợ phát âm thanh Web Speech.');
+      return;
+    }
+
+    if (speakingId === id) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    // Clean text from symbols, markdown, bullet points for clean speech
+    const cleanText = text
+      .replace(/[*#`_~>]/g, '')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/•/g, '')
+      .replace(/\n+/g, '. ')
+      .trim();
+
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'vi-VN';
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const viVoice = voices.find((v) => v.lang.includes('vi') || v.lang.includes('VI') || v.name.includes('Vietnamese'));
+    if (viVoice) {
+      utterance.voice = viVoice;
+    }
+
+    utterance.onstart = () => {
+      setSpeakingId(id);
+    };
+
+    utterance.onend = () => {
+      setSpeakingId(null);
+    };
+
+    utterance.onerror = () => {
+      setSpeakingId(null);
+    };
+
+    window.speechSynthesis.speak(utterance);
   };
 
   const handleSendMessage = async (textToSend) => {
@@ -326,22 +527,51 @@ export default function AiAssistantPage() {
                 <div className={`ai-message-bubble ${isBot ? 'bot-bubble' : 'user-bubble'}`}>
                   {cleanAiText(msg.content)}
 
-                  {/* Metadata and tool information */}
-                  {msg.toolUsed && (
+                  {/* Assistant Actions: Tool Source, TTS Speaker, and Copy */}
+                  {isBot && (
                     <div className="ai-tool-meta-bar">
-                      <span className="ai-tool-source-tag">
-                        ⚡ Nguồn: <code>{msg.toolUsed}</code>
-                      </span>
+                      {msg.toolUsed ? (
+                        <span className="ai-tool-source-tag">
+                          ⚡ Nguồn: <code>{msg.toolUsed}</code>
+                        </span>
+                      ) : (
+                        <span className="ai-tool-source-tag">
+                          🤖 AI Assistant
+                        </span>
+                      )}
 
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(msg.id, msg.content)}
-                        className="ai-copy-btn"
-                        title="Sao chép câu trả lời"
-                      >
-                        {isCopied ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
-                        <span>{isCopied ? 'Đã chép' : 'Sao chép'}</span>
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {/* Voice Text-to-Speech Button */}
+                        <button
+                          type="button"
+                          onClick={() => toggleSpeak(msg.id, msg.content)}
+                          className={`ai-copy-btn ${speakingId === msg.id ? 'speaking' : ''}`}
+                          title={speakingId === msg.id ? 'Dừng đọc' : 'Đọc câu trả lời bằng giọng nói'}
+                        >
+                          {speakingId === msg.id ? (
+                            <>
+                              <VolumeX size={12} color="#ef4444" />
+                              <span style={{ color: '#ef4444' }}>Dừng</span>
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 size={12} />
+                              <span>Đọc</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Copy Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(msg.id, msg.content)}
+                          className="ai-copy-btn"
+                          title="Sao chép câu trả lời"
+                        >
+                          {isCopied ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
+                          <span>{isCopied ? 'Đã chép' : 'Sao chép'}</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -410,11 +640,49 @@ export default function AiAssistantPage() {
               </div>
             )}
 
+            {/* Voice Error Banner */}
+            {voiceError && (
+              <div className="ai-voice-error-banner">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                  <AlertCircle size={15} color="#ef4444" style={{ flexShrink: 0 }} />
+                  <span>{voiceError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setVoiceError(null)}
+                  className="ai-voice-error-close"
+                  title="Đóng thông báo"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            )}
+
             {/* Listening Banner if Speech-to-text is active */}
             {isListening && (
               <div className="ai-listening-banner">
-                <span className="voice-pulse-dot" />
-                <span>Đang lắng nghe giọng nói tiếng Việt... Hãy nói câu hỏi.</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="voice-pulse-dot" />
+                  <span>Đang lắng nghe giọng nói tiếng Việt... Hãy nói câu hỏi.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleVoice}
+                  className="ai-listening-stop-btn"
+                  title="Kết thúc thu âm"
+                >
+                  Hoàn tất
+                </button>
+              </div>
+            )}
+
+            {/* Transcribing Banner when backend Gemini is processing audio */}
+            {transcribing && (
+              <div className="ai-listening-banner transcribing">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={14} className="spin" color="#166534" />
+                  <span>Đang nhận diện giọng nói qua Gemini AI Multimodal...</span>
+                </div>
               </div>
             )}
 
@@ -522,17 +790,28 @@ export default function AiAssistantPage() {
                 <button
                   type="button"
                   onClick={toggleVoice}
-                  className={`ai-voice-pill-btn ${isListening ? 'listening' : ''}`}
-                  title={isListening ? 'Dừng lắng nghe' : 'Nói tiếng Việt bằng giọng nói'}
+                  disabled={transcribing}
+                  className={`ai-voice-pill-btn ${isListening ? 'listening' : ''} ${transcribing ? 'transcribing' : ''}`}
+                  title={isListening ? 'Dừng lắng nghe' : transcribing ? 'Đang chuyển giọng nói thành văn bản' : 'Nói tiếng Việt bằng giọng nói'}
                 >
                   {isListening ? (
-                    <div className="voice-wave-bars">
-                      <span /><span /><span />
-                    </div>
+                    <>
+                      <div className="voice-wave-bars">
+                        <span /><span /><span />
+                      </div>
+                      <span>Đang nghe</span>
+                    </>
+                  ) : transcribing ? (
+                    <>
+                      <Sparkles size={14} className="spin" />
+                      <span>Xử lý...</span>
+                    </>
                   ) : (
-                    <span className="voice-bars-symbol">|||</span>
+                    <>
+                      <Mic size={14} />
+                      <span className="show-desktop-inline">Voice</span>
+                    </>
                   )}
-                  <span className="show-desktop-inline">Voice</span>
                 </button>
 
                 {/* Solid Send Button - ALWAYS VISIBLE */}
@@ -1180,16 +1459,79 @@ export default function AiAssistantPage() {
           align-items: center;
         }
 
+        .ai-voice-error-banner {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 7px 10px;
+          margin-bottom: 8px;
+          border-radius: 8px;
+          background-color: #fef2f2;
+          border: 1px solid #fecaca;
+          color: #991b1b;
+          font-size: 12px;
+          font-weight: 500;
+          line-height: 1.4;
+        }
+        .ai-voice-error-close {
+          background: none;
+          border: none;
+          padding: 2px;
+          cursor: pointer;
+          color: #991b1b;
+          display: flex;
+          align-items: center;
+          opacity: 0.7;
+          border-radius: 4px;
+        }
+        .ai-voice-error-close:hover {
+          opacity: 1;
+          background-color: #fee2e2;
+        }
+
         .ai-listening-banner {
           display: flex;
           align-items: center;
+          justify-content: space-between;
           gap: 8px;
-          padding: 4px 6px;
-          margin-bottom: 6px;
-          fontSize: 12px;
-          color: #dc2626;
+          padding: 6px 10px;
+          margin-bottom: 8px;
+          border-radius: 8px;
+          background-color: #fff1f2;
+          border: 1px solid #ffe4e6;
+          font-size: 12px;
+          color: #be123c;
           font-weight: 600;
-          animation: pulse 1.5s infinite;
+        }
+        .ai-listening-banner.transcribing {
+          background-color: #f0fdf4;
+          border-color: #bbf7d0;
+          color: #166534;
+        }
+        .ai-listening-stop-btn {
+          background: #e11d48;
+          color: #ffffff;
+          border: none;
+          border-radius: 9999px;
+          padding: 3px 10px;
+          font-size: 11px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.15s;
+          flex-shrink: 0;
+        }
+        .ai-listening-stop-btn:hover {
+          background: #be123c;
+        }
+        .ai-copy-btn.speaking {
+          background-color: #fee2e2;
+          border-color: #fca5a5;
+          color: #dc2626;
+        }
+        .ai-voice-pill-btn.transcribing {
+          background-color: #2563eb;
+          box-shadow: 0 0 14px rgba(37, 99, 235, 0.4);
         }
 
         .ai-prompt-textarea {

@@ -8,6 +8,7 @@ const ProductVisionEngine = require('../modules/ai/vision/productVisionEngine');
 const { query } = require('../database');
 const { createAuditLog } = require('../repositories/auditRepository');
 const { AppError } = require('../middleware/errorHandler');
+const config = require('../config/env');
 
 class AiController {
   static async chat(req, res, next) {
@@ -221,6 +222,76 @@ class AiController {
       return res.status(200).json({
         success: true,
         data: result
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async transcribeAudio(req, res, next) {
+    try {
+      const { audioBase64, mimeType = 'audio/webm' } = req.body;
+      if (!audioBase64) {
+        throw new AppError('Dữ liệu âm thanh không được để trống.', 400, 'EMPTY_AUDIO');
+      }
+
+      const cleanBase64 = audioBase64.replace(/^data:audio\/[a-z0-9]+;base64,/, '');
+
+      if (!config.geminiApiKey) {
+        return res.status(200).json({
+          success: false,
+          message: 'Chưa cấu hình GEMINI_API_KEY để xử lý giọng nói đám mây.',
+          text: ''
+        });
+      }
+
+      const prompt = `Bạn là trợ lý nhận dạng giọng nói tiếng Việt cho ứng dụng bán hàng POS và quản lý siêu thị/tạp hóa.
+Hãy nghe đoạn âm thanh này và xuất ra chính xác văn bản tiếng Việt người dùng vừa nói.
+Ví dụ: "Hôm nay doanh thu thế nào", "Kiểm tra tồn kho mì Hảo Hảo", "Top 5 sản phẩm bán chạy nhất hôm nay", "Có hóa đơn nào chưa thanh toán không".
+Yêu cầu: Chỉ trả về duy nhất văn bản tiếng Việt được chuyển đổi, không kèm giải thích hay từ ngữ thừa nào khác. Nếu không có tiếng nói hoặc chỉ là tiếng ồn ngẫu nhiên, trả về chuỗi rỗng.`;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${config.geminiApiKey}`;
+      const payload = {
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: cleanBase64
+                }
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1
+        }
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn('[AiController] Gemini Audio Transcribe warning:', errorText);
+        return res.status(200).json({
+          success: false,
+          message: 'Không thể nhận diện âm thanh lúc này.',
+          text: ''
+        });
+      }
+
+      const data = await response.json();
+      const transcribedText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+
+      return res.status(200).json({
+        success: true,
+        text: transcribedText
       });
     } catch (err) {
       next(err);

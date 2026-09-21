@@ -23,4 +23,7 @@ router.post('/self-train', requireAdmin, AiController.triggerSelfTraining);
 // AI Visual Product Recognition (Camera Packaging & Label Scanner)
 router.post('/recognize-product-image', AiController.recognizeProductImage);
 
+// AI Voice Speech-to-Text Transcription (Multimodal Gemini Audio)
+router.post('/transcribe-audio', AiController.transcribeAudio);
+
 module.exports = router;
