@@ -3,6 +3,7 @@ const { getInventoryList, createTransaction, listTransactions } = require('../re
 const { createAuditLog } = require('../repositories/auditRepository');
 const { broadcastStockUpdate, broadcastLowStockAlert } = require('./socketService');
 const ProductClassifier = require('../modules/ai/classifier/productClassifier');
+const ContinuousLearningEngine = require('../modules/ai/learning/continuousLearningEngine');
 const { generateProductCode } = require('../utils/text');
 const { AppError } = require('../middleware/errorHandler');
 
@@ -370,6 +371,13 @@ class InventoryService {
       });
 
       await client.query('COMMIT;');
+
+      // Trigger continuous self-learning for the imported new product
+      try {
+        await ContinuousLearningEngine.onProductAdded(product);
+      } catch (learnErr) {
+        console.warn('[Self-Learning] Import learning notice:', learnErr.message);
+      }
 
       const updateInfo = {
         productId: product.id,

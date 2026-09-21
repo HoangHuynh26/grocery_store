@@ -1,4 +1,5 @@
 const { EmbeddingService } = require('./embeddingService');
+const ContinuousLearningEngine = require('../learning/continuousLearningEngine');
 const { VN_OFFSET_HOURS, formatVnDateTime } = require('../../../utils/timezone');
 
 class CronScheduler {
@@ -61,29 +62,37 @@ class CronScheduler {
    * Executes the midnight embedding synchronization job
    */
   async executeMidnightJob() {
-    console.log(`[Cron Scheduler] 🕛 Starting scheduled 12:00 AM (Midnight) product embedding synchronization...`);
+    console.log(`[Cron Scheduler] 🕛 Starting scheduled 12:00 AM (Midnight) AI comprehensive self-training pipeline...`);
     try {
-      const stats = await EmbeddingService.updateAllProductEmbeddings({ force: true });
+      const trainResult = await ContinuousLearningEngine.runDailySelfTraining({ sessionType: 'DAILY_AUTO_TRAIN' });
       this.lastRunAt = new Date().toISOString();
-      this.lastRunStats = stats;
-      console.log(`[Cron Scheduler] ✅ Midnight embedding sync completed: ${stats.updatedCount} products updated in ${stats.durationMs}ms`);
-      return stats;
+      this.lastRunStats = {
+        ...trainResult,
+        updatedCount: trainResult.metrics?.embeddingsUpdated || 0,
+        durationMs: trainResult.durationMs
+      };
+      console.log(`[Cron Scheduler] ✅ Midnight AI self-training completed in ${trainResult.durationMs}ms`);
+      return this.lastRunStats;
     } catch (err) {
-      console.error(`[Cron Scheduler] ❌ Midnight embedding sync error:`, err.message);
+      console.error(`[Cron Scheduler] ❌ Midnight AI self-training error:`, err.message);
       this.lastRunStats = { error: err.message, failedAt: new Date().toISOString() };
       return null;
     }
   }
 
   /**
-   * Manually trigger embedding sync immediately (e.g. for Admin or automated testing)
+   * Manually trigger full AI self-training immediately (e.g. for Admin or automated testing)
    */
   async triggerManualRun({ force = false } = {}) {
-    console.log(`[Cron Scheduler] ⚡ Manual product embedding synchronization triggered (force=${force})...`);
-    const stats = await EmbeddingService.updateAllProductEmbeddings({ force });
+    console.log(`[Cron Scheduler] ⚡ Manual AI self-training triggered (force=${force})...`);
+    const trainResult = await ContinuousLearningEngine.runDailySelfTraining({ sessionType: 'MANUAL_TRIGGER', force });
     this.lastRunAt = new Date().toISOString();
-    this.lastRunStats = stats;
-    return stats;
+    this.lastRunStats = {
+      ...trainResult,
+      updatedCount: trainResult.metrics?.embeddingsUpdated || 0,
+      durationMs: trainResult.durationMs
+    };
+    return this.lastRunStats;
   }
 
   /**

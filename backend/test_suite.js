@@ -453,6 +453,60 @@ async function runTests() {
     `Top semantic match "${semanticSearchRes.data.data[0].name}" has high cosine similarity: ${semanticSearchRes.data.data[0].similarity}`
   );
 
+  // TEST 13: Continuous Self-Learning & Auto-Training Engine
+  console.log('\n[13] Testing AI Continuous Self-Learning & Auto-Training Engine...');
+  
+  // 13.1 Query Self-Learning Statistics
+  const learningStatsRes = await request('/ai/learning-stats', {
+    headers: { Authorization: `Bearer ${adminToken}` }
+  });
+  assert(learningStatsRes.status === 200, 'AI learning stats endpoint returns 200 OK');
+  assert(learningStatsRes.data.data.status === 'ACTIVE_SELF_LEARNING', 'AI model is in active self-learning mode');
+  assert(learningStatsRes.data.data.learnedVocabularyTerms > 0, `Self-learned vocabulary terms: ${learningStatsRes.data.data.learnedVocabularyTerms}`);
+  assert(typeof learningStatsRes.data.data.nextAutoTrainFormatted === 'string', `Next daily midnight auto-train scheduled: ${learningStatsRes.data.data.nextAutoTrainFormatted}`);
+
+  // 13.2 Verify Incremental Micro-Learning upon Product Addition
+  const learnProdCode = `LEARN-PROD-${Date.now()}`;
+  const learnProdRes = await request('/products', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({
+      productCode: learnProdCode,
+      name: 'Bánh gạo Ichi vị mật ong Nhật Bản giòn rụm 150g',
+      costPrice: 20000,
+      sellingPrice: 28000,
+      stockQuantity: 50,
+      unit: 'gói',
+      description: 'Bánh gạo Nhật Bản nướng vàng giòn thơm mật ong'
+    })
+  });
+  assert(learnProdRes.status === 201, 'Created new product to test incremental AI learning');
+
+  // Check learned knowledge in database
+  const checkKnowledge = await dbQuery(
+    "SELECT term, knowledge_type, weight, frequency FROM ai_learned_knowledge WHERE term = 'ichi' LIMIT 1"
+  );
+  assert(checkKnowledge.rowCount > 0, 'AI engine automatically harvested brand keyword "ichi" into learned knowledge');
+
+  // 13.3 Test On-Demand Manual / Conversational Self-Training
+  const triggerTrainRes = await request('/ai/self-train', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ force: true })
+  });
+  assert(triggerTrainRes.status === 200, 'On-demand self-training execution returns 200 OK');
+  assert(triggerTrainRes.data.data.success === true, 'Self-training cycle completed with SUCCESS status');
+  assert(triggerTrainRes.data.data.metrics.vocabularySize > 0, `Trained domain catalog with ${triggerTrainRes.data.data.metrics.vocabularySize} terms`);
+  assert(triggerTrainRes.data.data.durationMs > 0, `Training benchmark: ${triggerTrainRes.data.data.durationMs}ms`);
+
+  // 13.4 Query Self-Learning Epoch History Logs
+  const trainingLogsRes = await request('/ai/training-logs?limit=5', {
+    headers: { Authorization: `Bearer ${adminToken}` }
+  });
+  assert(trainingLogsRes.status === 200, 'Training epoch logs endpoint returns 200 OK');
+  assert(Array.isArray(trainingLogsRes.data.data) && trainingLogsRes.data.data.length > 0, 'Training epoch logs returned array of runs');
+  assert(trainingLogsRes.data.data[0].status === 'SUCCESS', `Latest epoch status is ${trainingLogsRes.data.data[0].status}`);
+
   console.log('\n====================================================');
   console.log(` TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================');

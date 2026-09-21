@@ -15,4 +15,9 @@ router.get('/embeddings/status', AiController.getEmbeddingStatus);
 router.post('/embeddings/sync', requireAdmin, AiController.syncEmbeddings);
 router.post('/embeddings/search', AiController.semanticSearch);
 
+// Continuous Self-Learning Endpoints (Daily auto-train & on product add)
+router.get('/learning-stats', AiController.getLearningStats);
+router.get('/training-logs', AiController.getTrainingLogs);
+router.post('/self-train', requireAdmin, AiController.triggerSelfTraining);
+
 module.exports = router;

@@ -58,7 +58,8 @@ class TrendSeasonalityForecastModel extends BaseForecastModel {
         slope: 0,
         seasonalIndices: Array(12).fill(1.0),
         stdDev: avg * 0.1,
-        sampleSize: revenues.length
+        sampleSize: revenues.length,
+        lastStep: revenues.length
       };
       this.isTrained = true;
       return;

@@ -3,6 +3,7 @@ const ForecastService = require('../modules/ai/forecasting/forecastService');
 const ProductClassifier = require('../modules/ai/classifier/productClassifier');
 const { EmbeddingService } = require('../modules/ai/embedding/embeddingService');
 const cronScheduler = require('../modules/ai/embedding/cronScheduler');
+const ContinuousLearningEngine = require('../modules/ai/learning/continuousLearningEngine');
 const { query } = require('../database');
 const { createAuditLog } = require('../repositories/auditRepository');
 const { AppError } = require('../middleware/errorHandler');
@@ -157,6 +158,45 @@ class AiController {
       return res.status(200).json({
         success: true,
         data: results
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async getLearningStats(req, res, next) {
+    try {
+      const stats = await ContinuousLearningEngine.getLearningStats();
+      return res.status(200).json({
+        success: true,
+        data: stats
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async getTrainingLogs(req, res, next) {
+    try {
+      const limit = parseInt(req.query.limit || '15', 10);
+      const logs = await ContinuousLearningEngine.getTrainingLogs(limit);
+      return res.status(200).json({
+        success: true,
+        data: logs
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async triggerSelfTraining(req, res, next) {
+    try {
+      const sessionType = req.body.sessionType || 'MANUAL_TRIGGER';
+      const result = await ContinuousLearningEngine.runDailySelfTraining({ sessionType });
+      return res.status(200).json({
+        success: true,
+        data: result,
+        message: 'Hoàn tất phiên tự học và huấn luyện toàn diện các mô hình AI.'
       });
     } catch (err) {
       next(err);

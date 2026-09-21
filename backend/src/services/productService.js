@@ -13,6 +13,7 @@ const { generateQrToken } = require('../utils/idGenerator');
 const { createAuditLog } = require('../repositories/auditRepository');
 const { AppError } = require('../middleware/errorHandler');
 const { EmbeddingService } = require('../modules/ai/embedding/embeddingService');
+const ContinuousLearningEngine = require('../modules/ai/learning/continuousLearningEngine');
 
 class ProductService {
   static async getProducts(filters) {
@@ -133,11 +134,11 @@ class ProductService {
       userAgent
     });
 
-    // Automatically generate and update embedding for the new product
+    // Automatically trigger continuous self-learning & embedding for the new product
     try {
-      await EmbeddingService.updateProductEmbedding(created.id);
-    } catch (embErr) {
-      console.warn('[Embedding] Auto embedding creation warning:', embErr.message);
+      await ContinuousLearningEngine.onProductAdded(created);
+    } catch (learnErr) {
+      console.warn('[Self-Learning] Auto learning notice:', learnErr.message);
     }
 
     return created;

@@ -344,6 +344,38 @@ ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_city VARCHAR(100);
 ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_country VARCHAR(50);
 ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_details JSONB;
 
+-- AI Continuous Learning Logs table
+CREATE TABLE IF NOT EXISTS ai_training_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_type VARCHAR(50) NOT NULL,
+    model_types TEXT[] NOT NULL,
+    items_processed INT NOT NULL DEFAULT 0,
+    metrics JSONB,
+    insights JSONB,
+    status VARCHAR(20) NOT NULL DEFAULT 'SUCCESS' CHECK (status IN ('SUCCESS', 'FAILED', 'IN_PROGRESS')),
+    error_message TEXT,
+    duration_ms INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- AI Learned Knowledge & Brand Associations table
+CREATE TABLE IF NOT EXISTS ai_learned_knowledge (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    knowledge_type VARCHAR(50) NOT NULL,
+    term VARCHAR(100) NOT NULL,
+    category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+    weight NUMERIC(8,4) NOT NULL DEFAULT 1.0,
+    frequency INT NOT NULL DEFAULT 1,
+    source VARCHAR(50) NOT NULL DEFAULT 'PRODUCT_INGESTION',
+    metadata JSONB,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(knowledge_type, term, category_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_training_logs_created ON ai_training_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_learned_term ON ai_learned_knowledge(term);
+CREATE INDEX IF NOT EXISTS idx_ai_learned_category ON ai_learned_knowledge(category_id);
+
 -- ==============================================================================
 -- HOÀN TẤT KHỞI TẠO CƠ SỞ DỮ LIỆU NEON POSTGRESQL!
 -- ==============================================================================

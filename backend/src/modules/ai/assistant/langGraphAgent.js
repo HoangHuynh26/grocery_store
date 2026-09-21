@@ -80,6 +80,39 @@ class LangGraphAgent {
     }
 
     // -------------------------------------------------------------------------
+    // 2B. INTENT: Tự học / Tự train AI (Self-Learning & Continuous Training)
+    // -------------------------------------------------------------------------
+    if (lower.includes('tự học') || cleanQuery.includes('tu hoc') ||
+        lower.includes('tự train') || cleanQuery.includes('tu train') ||
+        lower.includes('retrain') || lower.includes('huấn luyện') || cleanQuery.includes('huan luyen') ||
+        lower.includes('học được gì') || cleanQuery.includes('hoc duoc gi') ||
+        lower.includes('mô hình ai') || cleanQuery.includes('mo hinh ai')) {
+
+      // Check if user wants to trigger self-training immediately
+      if (lower.includes('ngay') || lower.includes('bắt đầu') || cleanQuery.includes('bat dau') ||
+          lower.includes('chạy') || cleanQuery.includes('chay') || lower.includes('kích hoạt') || cleanQuery.includes('kich hoat')) {
+        const trainResult = await tools.triggerSelfTraining();
+        const insightsList = (trainResult.insights || []).map(i => `• ${i}`).join('\n');
+        return formatResult(
+          `🎉 ĐÃ HOÀN TẤT PHIÊN TỰ HỌC & HUẤN LUYỆN TOÀN DIỆN!\n\nThời gian xử lý: ${trainResult.durationMs}ms\n\nCác kết quả AI đã tự học được:\n${insightsList}\n\nHiện tại tất cả mô hình Phân loại, Dự báo doanh thu và Vector ngữ nghĩa đã được cập nhật tối ưu nhất!`,
+          'trigger_self_training',
+          trainResult
+        );
+      }
+
+      // Otherwise report learning status
+      const stats = await tools.getLearningStatus();
+      const accuracyText = stats.forecastingAccuracy ? `${stats.forecastingAccuracy.accuracyPercentage.toFixed(1)}% (MAPE: ${stats.forecastingAccuracy.mape.toFixed(2)}%)` : 'Đang hiệu chuẩn';
+      const recentInsights = (stats.lastInsights || []).map(i => `• ${i}`).join('\n');
+
+      return formatResult(
+        `🧠 TRẠNG THÁI MÔ HÌNH AI TỰ HỌC (CONTINUOUS LEARNING ENGINE):\n\n• Chế độ: Tự động học mỗi ngày (12:00 AM) & Mỗi khi thêm sản phẩm mới\n• Tổng số phiên tự học đã thực hiện: ${stats.totalTrainingSessions} phiên\n• Từ khóa & thương hiệu đã nạp vào tri thức: ${stats.learnedVocabularyTerms} từ khóa (${stats.learnedAssociations} liên kết danh mục)\n• Độ chính xác mô hình dự báo: ${accuracyText}\n• Lần tự học gần nhất: ${stats.lastTrainedFormatted}\n• Lần tự học kế tiếp: ${stats.nextAutoTrainFormatted} (còn khoảng ${stats.hoursUntilNextTrain} giờ)\n\nGhi nhận từ phiên tự học gần nhất:\n${recentInsights || '• Hệ thống đang vận hành ổn định.'}\n\nBạn có thể yêu cầu tôi "Tự train ngay" để kích hoạt phiên tự học lập tức!`,
+        'get_learning_status',
+        stats
+      );
+    }
+
+    // -------------------------------------------------------------------------
     // 3. INTENT: Dự đoán doanh thu (Forecasting)
     // -------------------------------------------------------------------------
     if (lower.includes('dự đoán') || cleanQuery.includes('du doan') ||

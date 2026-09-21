@@ -357,6 +357,22 @@ const tools = {
    */
   async getForecast() {
     return await ForecastService.getLatestForecast();
+  },
+
+  /**
+   * Tool: get_learning_status (Check continuous AI self-training status & metrics)
+   */
+  async getLearningStatus() {
+    const ContinuousLearningEngine = require('../learning/continuousLearningEngine');
+    return await ContinuousLearningEngine.getLearningStats();
+  },
+
+  /**
+   * Tool: trigger_self_training (Trigger immediate AI model self-training)
+   */
+  async triggerSelfTraining() {
+    const ContinuousLearningEngine = require('../learning/continuousLearningEngine');
+    return await ContinuousLearningEngine.runDailySelfTraining({ sessionType: 'MANUAL_TRIGGER' });
   }
 };
 

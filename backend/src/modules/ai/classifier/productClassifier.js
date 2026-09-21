@@ -113,11 +113,13 @@ class ProductClassifier {
       };
     }
 
-    // 2. Fetch sample products from DB for similarity matching
-    const prodRes = await query(
-      `SELECT id, name, category_id, unit FROM products WHERE is_active = TRUE LIMIT 300;`
-    );
+    // 2. Fetch sample products and dynamically learned knowledge from DB
+    const [prodRes, learnedRes] = await Promise.all([
+      query(`SELECT id, name, category_id, unit FROM products WHERE is_active = TRUE LIMIT 300;`),
+      query(`SELECT term, category_id, weight, frequency FROM ai_learned_knowledge WHERE frequency >= 1;`).catch(() => ({ rows: [] }))
+    ]);
     const existingProducts = prodRes.rows;
+    const learnedTerms = learnedRes.rows || [];
 
     // 3. Normalize input
     const cleanInput = removeVietnameseAccents(rawName.toLowerCase());
@@ -164,6 +166,17 @@ class ProductClassifier {
               }
             }
           }
+        }
+      }
+
+      // Check Dynamically Self-Learned Knowledge Base
+      const catLearned = learnedTerms.filter(l => l.category_id === cat.id);
+      for (const item of catLearned) {
+        if (cleanInput.includes(item.term)) {
+          const itemWeight = parseFloat(item.weight || 1.0);
+          const termScore = item.term.split(' ').length * 18 * itemWeight;
+          score += termScore;
+          matchReasons.push(`Khớp tri thức tự học "${item.term}" (x${itemWeight.toFixed(1)})`);
         }
       }
 
