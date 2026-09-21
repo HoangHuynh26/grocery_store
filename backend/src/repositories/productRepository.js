@@ -117,7 +117,7 @@ async function findByQrToken(qrToken) {
     SELECT p.*, c.name as category_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
-    WHERE p.qr_code_token = $1 AND p.is_active = TRUE;
+    WHERE (p.qr_code_token = $1 OR LOWER(p.product_code) = LOWER($1)) AND p.is_active = TRUE;
   `;
   const res = await query(sql, [qrToken]);
   return res.rows[0] || null;

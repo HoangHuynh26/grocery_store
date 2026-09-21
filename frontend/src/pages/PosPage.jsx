@@ -4,10 +4,11 @@ import { useSocket } from '../contexts/SocketContext';
 import { formatCurrency } from '../utils/formatters';
 import api from '../services/api';
 import confetti from 'canvas-confetti';
-import { QrCode, Search, ShoppingBag, Plus, AlertTriangle, Check, RefreshCw, Package, Filter, ChevronDown, X, Flame, Sparkles } from 'lucide-react';
+import { QrCode, Search, ShoppingBag, Plus, AlertTriangle, Check, RefreshCw, Package, Filter, ChevronDown, X, Flame, Sparkles, Zap } from 'lucide-react';
 import QrScannerModal from '../components/pos/QrScannerModal';
 import CartDrawer from '../components/pos/CartDrawer';
 import ReceiptModal from '../components/pos/ReceiptModal';
+import { playScanBeep } from '../utils/scannerAudio';
 
 export default function PosPage() {
   const { addToCart, totalUnits, totalAmount } = useCart();
@@ -24,6 +25,7 @@ export default function PosPage() {
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [completedInvoice, setCompletedInvoice] = useState(null);
   const [addedAnimationId, setAddedAnimationId] = useState(null);
+  const [scanToast, setScanToast] = useState(null);
 
   // Fetch products, categories, and top-selling products
   const loadData = useCallback(async () => {
@@ -47,6 +49,107 @@ export default function PosPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleProductAdd = useCallback((product) => {
+    if (product.stock_quantity <= 0) return;
+    addToCart(product, 1);
+
+    // Quick visual feedback
+    setAddedAnimationId(product.id);
+    setTimeout(() => setAddedAnimationId(null), 500);
+  }, [addToCart]);
+
+  // Direct Barcode/SKU scanning & auto add to cart
+  const handleScanDirect = useCallback(async (code) => {
+    if (!code) return;
+    const cleanCode = code.trim().toLowerCase();
+
+    // 1. Check local loaded products first (instant recognition!)
+    let found = products.find(
+      (p) =>
+        (p.product_code && p.product_code.toLowerCase() === cleanCode) ||
+        (p.qr_code_token && p.qr_code_token.toLowerCase() === cleanCode) ||
+        (p.id && String(p.id).toLowerCase() === cleanCode)
+    );
+
+    // 2. If not found locally, query backend
+    if (!found) {
+      try {
+        const res = await api.get(`/products/qr/${encodeURIComponent(code.trim())}`);
+        found = res.data?.data || res.data;
+      } catch (err) {
+        // Not found
+      }
+    }
+
+    if (found && found.id) {
+      if (found.stock_quantity <= 0) {
+        playScanBeep(false);
+        setScanToast({
+          type: 'warning',
+          message: `Sản phẩm "${found.name}" đã hết hàng trong kho!`
+        });
+        setTimeout(() => setScanToast(null), 3000);
+        return;
+      }
+
+      handleProductAdd(found);
+      playScanBeep(true);
+      setScanToast({
+        type: 'success',
+        message: `⚡ Đã thêm: ${found.name}`
+      });
+      setTimeout(() => setScanToast(null), 2500);
+      setSearchQuery('');
+    } else {
+      playScanBeep(false);
+      setScanToast({
+        type: 'error',
+        message: `Không tìm thấy sản phẩm với mã: "${code}"`
+      });
+      setTimeout(() => setScanToast(null), 3000);
+    }
+  }, [products, handleProductAdd]);
+
+  // Global Hardware Barcode Gun Listener (Auto-detects rapid typing + Enter)
+  useEffect(() => {
+    let buffer = '';
+    let lastKeyTime = Date.now();
+
+    const handleKeyDown = async (e) => {
+      // Don't capture when modal is active
+      if (isScannerOpen || !!completedInvoice) return;
+
+      const target = e.target;
+      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastKeyTime;
+      lastKeyTime = currentTime;
+
+      // Enter key signals end of barcode scan
+      if (e.key === 'Enter') {
+        const trimmedCode = buffer.trim();
+        buffer = '';
+
+        if (trimmedCode.length >= 2) {
+          if (isInput) target.blur();
+          await handleScanDirect(trimmedCode);
+        }
+        return;
+      }
+
+      // Barcode scanners type rapidly (< 60ms between keystrokes)
+      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (!isInput || timeDiff < 60) {
+          if (timeDiff > 250) buffer = '';
+          buffer += e.key;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleScanDirect, isScannerOpen, completedInvoice]);
 
   // Realtime stock synchronization when another admin sells or imports
   useEffect(() => {
@@ -76,17 +179,13 @@ export default function PosPage() {
     }
   }, [lastStockUpdate]);
 
-  const handleProductAdd = (product) => {
-    if (product.stock_quantity <= 0) return;
-    addToCart(product, 1);
-
-    // Quick visual feedback
-    setAddedAnimationId(product.id);
-    setTimeout(() => setAddedAnimationId(null), 500);
-  };
-
   const handleQrFound = (product) => {
     handleProductAdd(product);
+    setScanToast({
+      type: 'success',
+      message: `⚡ Đã thêm: ${product.name}`
+    });
+    setTimeout(() => setScanToast(null), 2500);
   };
 
   const handleCheckoutSuccess = (invoice, isDuplicate) => {
@@ -133,6 +232,32 @@ export default function PosPage() {
 
   return (
     <div className="pos-layout-wrapper">
+      {/* Instant Scan Floating Toast Notification */}
+      {scanToast && (
+        <div style={{
+          position: 'fixed',
+          top: '84px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 9999,
+          backgroundColor: scanToast.type === 'success' ? '#15803d' : (scanToast.type === 'warning' ? '#d97706' : '#dc2626'),
+          color: '#ffffff',
+          padding: '9px 18px',
+          borderRadius: 'var(--radius-full)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          fontWeight: 600,
+          fontSize: '13px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'slideDown 0.2s ease',
+          pointerEvents: 'none'
+        }}>
+          <Zap size={16} color="#fef08a" />
+          <span>{scanToast.message}</span>
+        </div>
+      )}
+
       {/* Left Column: Product Catalog */}
       <div className={`pos-catalog-scroll ${totalUnits > 0 ? 'has-cart' : ''}`}>
         {/* Top Controls: Search Bar, Category Popdown, and QR Scanner Trigger */}
@@ -143,9 +268,15 @@ export default function PosPage() {
                 type="text"
                 className="form-control"
                 style={{ paddingLeft: '38px', height: '42px', fontSize: '14px' }}
-                placeholder="Tìm tên món, mã SP..."
+                placeholder="Tìm tên món, hoặc bắn mã vạch SP..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    e.preventDefault();
+                    await handleScanDirect(searchQuery.trim());
+                  }
+                }}
               />
               <Search size={17} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
             </div>
@@ -155,10 +286,10 @@ export default function PosPage() {
               className="btn btn-primary"
               onClick={() => setIsScannerOpen(true)}
               style={{ height: '42px', padding: '0 16px', flexShrink: 0, gap: '6px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
-              title="Quét QR Camera"
+              title="Quét Mã Barcode / QR (Nhận diện tức thì)"
             >
               <QrCode size={18} />
-              <span style={{ fontWeight: 700, fontSize: '13px' }}>Quét QR</span>
+              <span style={{ fontWeight: 700, fontSize: '13px' }}>Quét Mã</span>
             </button>
           </div>
 
