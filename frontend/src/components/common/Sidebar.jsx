@@ -23,7 +23,7 @@ export default function Sidebar() {
     { to: '/products', label: 'Quản Lý Sản Phẩm', icon: Package },
     { to: '/categories', label: 'Danh Mục Hàng', icon: Tags },
     { to: '/inventory', label: 'Quản Lý Tồn Kho', icon: Boxes },
-    { to: '/invoices', label: 'Quản Lý Hóa Đơn', icon: FileText },
+    { to: '/invoices', label: 'Quản Lý Đơn Hàng', icon: FileText },
     { to: '/analytics', label: 'Báo Cáo Doanh Thu', icon: TrendingUp },
     { to: '/ai-assistant', label: 'Trợ Lý AI Chat', icon: Bot },
     { to: '/audit-logs', label: 'Nhật Ký Hoạt Động', icon: History },

@@ -544,6 +544,34 @@ async function runTests() {
   assert(noodleVisionRes.status === 200 && noodleVisionRes.data.data.success === true, 'Recognized noodle packaging successfully');
   assert(noodleVisionRes.data.data.product?.name.toLowerCase().includes('hảo hảo'), `Matched: ${noodleVisionRes.data.data.product?.name}`);
 
+  // TEST 15: Advanced Order/Invoice Time Filtering & Aggregate Summary Statistics
+  console.log('\n[15] Testing Order Management Multi-Tier Time Filtering...');
+
+  // 15.1 Query invoices with startDate only
+  const startOnlyRes = await request('/invoices?startDate=2026-09-01&limit=10', {
+    headers: { Authorization: `Bearer ${adminToken}` }
+  });
+  assert(startOnlyRes.status === 200, 'Query with independent startDate returns 200 OK');
+  assert(Array.isArray(startOnlyRes.data.data.items), 'Returned items array');
+  assert(typeof startOnlyRes.data.data.summary === 'object', 'Returned aggregate summary object');
+  assert(startOnlyRes.data.data.summary.totalOrders >= 0, `Total filtered orders: ${startOnlyRes.data.data.summary.totalOrders}`);
+  assert(startOnlyRes.data.data.summary.totalRevenue >= 0, `Total filtered revenue: ${startOnlyRes.data.data.summary.totalRevenue}`);
+
+  // 15.2 Query invoices with time-of-day shift filter (00:00 - 23:59)
+  const shiftRes = await request('/invoices?startTime=00:00&endTime=23:59&limit=10', {
+    headers: { Authorization: `Bearer ${adminToken}` }
+  });
+  assert(shiftRes.status === 200, 'Query with shift time range returns 200 OK');
+  assert(shiftRes.data.data.items.length > 0, 'Found orders within active day shift');
+
+  // 15.3 Query with combined Date & Time Range
+  const todayDateStr = new Date().toISOString().split('T')[0];
+  const combinedRes = await request(`/invoices?startDate=${todayDateStr}&startTime=00:00&endTime=23:59`, {
+    headers: { Authorization: `Bearer ${adminToken}` }
+  });
+  assert(combinedRes.status === 200, 'Query with combined Date & Time filters returns 200 OK');
+  assert(combinedRes.data.data.summary.averageOrderValue >= 0, `Computed Average Order Value: ${combinedRes.data.data.summary.averageOrderValue}`);
+
   console.log('\n====================================================');
   console.log(` TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================');

@@ -13,18 +13,27 @@ import {
   History,
   AlertCircle,
   Calendar,
-  X
+  Clock,
+  ShoppingBag,
+  DollarSign,
+  TrendingUp,
+  X,
+  Filter
 } from 'lucide-react';
 import Modal from '../components/common/Modal';
 
 export default function InvoicesPage() {
   const { isSuperAdmin } = useAuth();
   const [invoices, setInvoices] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [search, setSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [datePreset, setDatePreset] = useState('');
+  const [shift, setShift] = useState('all');
   const [loading, setLoading] = useState(true);
 
   // View Details Modal
@@ -76,10 +85,33 @@ export default function InvoicesPage() {
     }
   };
 
-  const clearDateFilter = () => {
+  // Helper to apply shift / time presets
+  const applyShift = (shiftKey) => {
+    setShift(shiftKey);
+    if (shiftKey === 'all') {
+      setStartTime('');
+      setEndTime('');
+    } else if (shiftKey === 'morning') {
+      setStartTime('06:00');
+      setEndTime('12:00');
+    } else if (shiftKey === 'afternoon') {
+      setStartTime('12:00');
+      setEndTime('18:00');
+    } else if (shiftKey === 'evening') {
+      setStartTime('18:00');
+      setEndTime('23:59');
+    }
+  };
+
+  const clearAllFilters = () => {
     setStartDate('');
     setEndDate('');
     setDatePreset('');
+    setStartTime('');
+    setEndTime('');
+    setShift('all');
+    setSearch('');
+    setPaymentMethod('');
   };
 
   const loadInvoices = useCallback(async () => {
@@ -88,18 +120,22 @@ export default function InvoicesPage() {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (paymentMethod) params.append('paymentMethod', paymentMethod);
-      if (startDate) params.append('startDate', startDate + 'T00:00:00');
-      if (endDate) params.append('endDate', endDate + 'T23:59:59');
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      if (startTime) params.append('startTime', startTime);
+      if (endTime) params.append('endTime', endTime);
       params.append('limit', '50');
 
       const res = await api.get(`/invoices?${params.toString()}`);
-      setInvoices(res.data?.items || []);
+      const resData = res.data?.data || res.data;
+      setInvoices(resData?.items || []);
+      setSummary(resData?.summary || null);
     } catch (err) {
       console.error('Load invoices error:', err);
     } finally {
       setLoading(false);
     }
-  }, [search, paymentMethod, startDate, endDate]);
+  }, [search, paymentMethod, startDate, endDate, startTime, endTime]);
 
   useEffect(() => {
     loadInvoices();
@@ -108,7 +144,7 @@ export default function InvoicesPage() {
   const openViewModal = async (invoiceId) => {
     try {
       const res = await api.get(`/invoices/${invoiceId}`);
-      setViewInvoice(res.data);
+      setViewInvoice(res.data?.data || res.data);
     } catch (e) {
       alert('Không thể tải chi tiết hóa đơn.');
     }
@@ -117,7 +153,7 @@ export default function InvoicesPage() {
   const openAdjustModal = async (invoiceId) => {
     try {
       const res = await api.get(`/invoices/${invoiceId}`);
-      const inv = res.data;
+      const inv = res.data?.data || res.data;
       setAdjustInvoice(inv);
       setAdjustments(inv.items.map(i => ({ itemId: i.id, newQuantity: i.quantity, originalQuantity: i.quantity, name: i.product_name })));
       setAdjustReason('');
@@ -138,47 +174,114 @@ export default function InvoicesPage() {
       setSubmitting(true);
       setAdjustError('');
       await api.put(`/invoices/${adjustInvoice.id}/adjust`, {
-        itemAdjustments: adjustments.map(a => ({ itemId: a.itemId, newQuantity: parseInt(a.newQuantity, 10) })),
-        reason: adjustReason
+        itemAdjustments: adjustments.map(a => ({ itemId: a.itemId, quantity: parseInt(a.newQuantity, 10) })),
+        reason: adjustReason.trim()
       });
+      alert('Điều chỉnh hóa đơn thành công và đã hoàn kho tương ứng.');
       setAdjustInvoice(null);
       loadInvoices();
     } catch (err) {
-      setAdjustError(err.message || 'Lỗi khi lưu điều chỉnh hóa đơn.');
+      setAdjustError(err.response?.data?.error?.message || err.message || 'Lỗi điều chỉnh hóa đơn.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  const hasActiveFilter = !!(startDate || endDate || startTime || endTime || search || paymentMethod || datePreset);
 
   return (
     <div className="page-container">
       {/* Header */}
       <div className="page-header-responsive">
         <div>
-          <h1 style={{ fontSize: '22px' }}>Quản Lý Hóa Đơn Bán Hàng</h1>
+          <h1 style={{ fontSize: '22px' }}>Quản Lý Đơn Hàng & Hóa Đơn</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
-            Hồ sơ tài chính bán lẻ bất biến & chứng từ kiểm toán
+            Theo dõi, lọc theo thời gian thực và quản lý hồ sơ đơn hàng bán lẻ tại quầy POS
           </p>
         </div>
 
         <button
           onClick={loadInvoices}
           className="btn btn-secondary btn-icon"
-          title="Làm mới"
+          title="Làm mới dữ liệu"
           style={{ width: '38px', height: '38px' }}
         >
           <RefreshCw size={16} className={loading ? 'spin' : ''} />
         </button>
       </div>
 
-      {/* Filter Bar */}
-      <div className="card" style={{ padding: '14px', marginBottom: '16px' }}>
+      {/* KPI Summary Cards for Filtered Period */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+        gap: '12px',
+        marginBottom: '16px'
+      }}>
+        {/* Card 1: Tổng đơn hàng */}
+        <div className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+            <ShoppingBag size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Tổng Đơn Hàng</div>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
+              {summary ? `${summary.totalOrders} đơn` : `${invoices.length} đơn`}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Doanh Thu Kỳ Này */}
+        <div className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: 'rgba(16, 185, 129, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', flexShrink: 0 }}>
+            <DollarSign size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Doanh Thu Kỳ Lọc</div>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: '#10b981' }}>
+              {formatCurrency(summary?.totalRevenue ?? invoices.reduce((acc, i) => acc + parseFloat(i.total_amount || 0), 0))}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Cơ cấu thanh toán */}
+        <div className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: 'rgba(59, 130, 246, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', flexShrink: 0 }}>
+            <TrendingUp size={20} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Tiền Mặt / CK</div>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              💵 {formatCurrency(summary?.cashRevenue ?? 0)}
+            </div>
+            <div style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 600 }}>
+              💳 {formatCurrency(summary?.transferRevenue ?? 0)}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Giá trị trung bình đơn (AOV) */}
+        <div className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: 'rgba(245, 158, 11, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b', flexShrink: 0 }}>
+            <Clock size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Giá Trị TB / Đơn</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+              {formatCurrency(summary?.averageOrderValue ?? 0)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Comprehensive Multi-Tier Filter Bar */}
+      <div className="card" style={{ padding: '16px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {/* Tier 1: Search & Payment Method */}
         <div className="filter-bar-responsive">
           <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
             <input
               type="text"
               className="form-control"
-              placeholder="Tìm theo số hóa đơn hoặc tên nhân viên..."
+              placeholder="Tìm theo số đơn hàng, mã HD, tên thu ngân..."
               style={{ paddingLeft: '36px' }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -192,75 +295,125 @@ export default function InvoicesPage() {
             value={paymentMethod}
             onChange={(e) => setPaymentMethod(e.target.value)}
           >
-            <option value="">Tất cả phương thức</option>
+            <option value="">Tất cả phương thức thanh toán</option>
             <option value="CASH">Tiền mặt</option>
-            <option value="TRANSFER">Chuyển khoản</option>
+            <option value="TRANSFER">Chuyển khoản / QR</option>
           </select>
         </div>
 
-        {/* Date Range Filter */}
-        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
-            <Calendar size={14} color="var(--text-muted)" />
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Lọc thời gian:</span>
-            {[
-              { key: 'today', label: 'Hôm nay' },
-              { key: 'yesterday', label: 'Hôm qua' },
-              { key: '7days', label: '7 ngày' },
-              { key: 'week', label: 'Tuần này' },
-              { key: 'month', label: 'Tháng này' },
-              { key: '30days', label: '30 ngày' },
-            ].map(p => (
-              <button
-                key={p.key}
-                type="button"
-                className={`btn ${datePreset === p.key ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '20px', height: '28px' }}
-                onClick={() => applyDatePreset(p.key)}
-              >
-                {p.label}
-              </button>
-            ))}
-            {(startDate || endDate) && (
+        {/* Tier 2: Quick Date Presets */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <Calendar size={14} color="var(--text-muted)" />
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Ngày:</span>
+          {[
+            { key: 'today', label: 'Hôm nay' },
+            { key: 'yesterday', label: 'Hôm qua' },
+            { key: '7days', label: '7 ngày qua' },
+            { key: 'week', label: 'Tuần này' },
+            { key: 'month', label: 'Tháng này' },
+            { key: '30days', label: '30 ngày' },
+          ].map(p => (
+            <button
+              key={p.key}
+              type="button"
+              className={`btn ${datePreset === p.key ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '20px', height: '28px' }}
+              onClick={() => applyDatePreset(p.key)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tier 3: Shift / Time-of-Day Presets */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', paddingTop: '4px' }}>
+          <Clock size={14} color="var(--text-muted)" />
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Ca Bán Hàng:</span>
+          {[
+            { key: 'all', label: 'Tất cả giờ' },
+            { key: 'morning', label: 'Ca Sáng (06:00 - 12:00)' },
+            { key: 'afternoon', label: 'Ca Chiều (12:00 - 18:00)' },
+            { key: 'evening', label: 'Ca Tối (18:00 - 23:59)' }
+          ].map(s => (
+            <button
+              key={s.key}
+              type="button"
+              className={`btn ${shift === s.key ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '4px 12px', fontSize: '11px', borderRadius: '20px', height: '28px' }}
+              onClick={() => applyShift(s.key)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tier 4: Custom Date & Time Inputs */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          flexWrap: 'wrap',
+          paddingTop: '10px',
+          borderTop: '1px dashed var(--border-color)'
+        }}>
+          {/* Start Date & Time */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Từ:</label>
+            <input
+              type="date"
+              className="form-control"
+              style={{ width: 'auto', fontSize: '12px', padding: '6px 8px' }}
+              value={startDate}
+              onChange={(e) => { setStartDate(e.target.value); setDatePreset('custom'); }}
+            />
+            <input
+              type="time"
+              className="form-control"
+              style={{ width: 'auto', fontSize: '12px', padding: '6px 8px' }}
+              value={startTime}
+              onChange={(e) => { setStartTime(e.target.value); setShift('custom'); }}
+              title="Giờ bắt đầu"
+            />
+          </div>
+
+          {/* End Date & Time */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Đến:</label>
+            <input
+              type="date"
+              className="form-control"
+              style={{ width: 'auto', fontSize: '12px', padding: '6px 8px' }}
+              value={endDate}
+              onChange={(e) => { setEndDate(e.target.value); setDatePreset('custom'); }}
+            />
+            <input
+              type="time"
+              className="form-control"
+              style={{ width: 'auto', fontSize: '12px', padding: '6px 8px' }}
+              value={endTime}
+              onChange={(e) => { setEndTime(e.target.value); setShift('custom'); }}
+              title="Giờ kết thúc"
+            />
+          </div>
+
+          {/* Active Filter Clear & Indicator */}
+          {hasActiveFilter && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
+              <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600, backgroundColor: 'var(--primary-light)', padding: '4px 10px', borderRadius: '12px' }}>
+                Đang lọc: {summary?.totalOrders ?? invoices.length} đơn
+              </span>
               <button
                 type="button"
                 className="btn btn-secondary"
-                style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '20px', height: '28px', color: 'var(--danger)' }}
-                onClick={clearDateFilter}
-                title="Xóa bộ lọc thời gian"
+                style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '12px', height: '28px', color: 'var(--danger)', gap: '4px' }}
+                onClick={clearAllFilters}
+                title="Xóa tất cả điều kiện lọc"
               >
-                <X size={12} />
+                <X size={13} />
                 <span>Xóa lọc</span>
               </button>
-            )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <label style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Từ:</label>
-              <input
-                type="date"
-                className="form-control"
-                style={{ width: 'auto', fontSize: '13px', padding: '6px 10px' }}
-                value={startDate}
-                onChange={(e) => { setStartDate(e.target.value); setDatePreset('custom'); }}
-              />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <label style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Đến:</label>
-              <input
-                type="date"
-                className="form-control"
-                style={{ width: 'auto', fontSize: '13px', padding: '6px 10px' }}
-                value={endDate}
-                onChange={(e) => { setEndDate(e.target.value); setDatePreset('custom'); }}
-              />
-            </div>
-            {startDate && endDate && (
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                {startDate === endDate ? '1 ngày' : `${Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000) + 1} ngày`}
-              </span>
-            )}
-          </div>
+          )}
         </div>
       </div>
 

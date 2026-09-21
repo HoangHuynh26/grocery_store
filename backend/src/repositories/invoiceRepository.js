@@ -63,6 +63,8 @@ async function listInvoices({
   search = '',
   startDate = null,
   endDate = null,
+  startTime = null,
+  endTime = null,
   userId = null,
   paymentMethod = null,
   status = null,
@@ -80,9 +82,37 @@ async function listInvoices({
     idx++;
   }
 
-  if (startDate && endDate) {
-    whereClauses.push(`i.created_at >= $${idx++} AND i.created_at <= $${idx++}`);
-    params.push(startDate, endDate);
+  // Date filtering (independent support for startDate and/or endDate)
+  if (startDate) {
+    // If startDate has time or timezone already
+    let startTimestamp = startDate;
+    if (!startDate.includes('T') && !startDate.includes(' ')) {
+      startTimestamp = `${startDate}T00:00:00+07:00`;
+    }
+    whereClauses.push(`i.created_at >= $${idx++}`);
+    params.push(startTimestamp);
+  }
+
+  if (endDate) {
+    let endTimestamp = endDate;
+    if (!endDate.includes('T') && !endDate.includes(' ')) {
+      endTimestamp = `${endDate}T23:59:59+07:00`;
+    }
+    whereClauses.push(`i.created_at <= $${idx++}`);
+    params.push(endTimestamp);
+  }
+
+  // Time-of-day filtering (e.g. for shifts: 06:00 to 12:00)
+  if (startTime) {
+    const formattedStartTime = startTime.length === 5 ? `${startTime}:00` : startTime;
+    whereClauses.push(`(i.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::time >= $${idx++}::time`);
+    params.push(formattedStartTime);
+  }
+
+  if (endTime) {
+    const formattedEndTime = endTime.length === 5 ? `${endTime}:59` : endTime;
+    whereClauses.push(`(i.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::time <= $${idx++}::time`);
+    params.push(formattedEndTime);
   }
 
   if (userId) {
@@ -102,8 +132,13 @@ async function listInvoices({
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
+  // Aggregate summary & total count for the filtered period
   const countSql = `
-    SELECT COUNT(DISTINCT i.id) as total
+    SELECT 
+      COUNT(DISTINCT i.id) as total,
+      COALESCE(SUM(i.total_amount), 0) as total_revenue,
+      COALESCE(SUM(CASE WHEN p.payment_method = 'CASH' THEN i.total_amount ELSE 0 END), 0) as cash_revenue,
+      COALESCE(SUM(CASE WHEN p.payment_method = 'TRANSFER' THEN i.total_amount ELSE 0 END), 0) as transfer_revenue
     FROM invoices i
     LEFT JOIN users u ON i.user_id = u.id
     LEFT JOIN payments p ON i.id = p.invoice_id
@@ -111,6 +146,10 @@ async function listInvoices({
   `;
   const countRes = await query(countSql, params);
   const total = parseInt(countRes.rows[0]?.total || '0', 10);
+  const totalRevenue = parseFloat(countRes.rows[0]?.total_revenue || 0);
+  const cashRevenue = parseFloat(countRes.rows[0]?.cash_revenue || 0);
+  const transferRevenue = parseFloat(countRes.rows[0]?.transfer_revenue || 0);
+  const averageOrderValue = total > 0 ? Math.round(totalRevenue / total) : 0;
 
   const dataSql = `
     SELECT 
@@ -133,15 +172,23 @@ async function listInvoices({
     ORDER BY i.created_at DESC
     LIMIT $${idx++} OFFSET $${idx++};
   `;
-  params.push(limit, offset);
-  const dataRes = await query(dataSql, params);
+  // Create pagination params copy to preserve original params for countSql
+  const dataParams = [...params, limit, offset];
+  const dataRes = await query(dataSql, dataParams);
 
   return {
     items: dataRes.rows,
     total,
     page,
     limit,
-    totalPages: Math.ceil(total / limit)
+    totalPages: Math.ceil(total / limit),
+    summary: {
+      totalOrders: total,
+      totalRevenue,
+      cashRevenue,
+      transferRevenue,
+      averageOrderValue
+    }
   };
 }
 

@@ -9,6 +9,8 @@ class InvoiceController {
       const search = req.query.search || '';
       const startDate = req.query.startDate || null;
       const endDate = req.query.endDate || null;
+      const startTime = req.query.startTime || null;
+      const endTime = req.query.endTime || null;
       const userId = req.query.userId || null;
       const paymentMethod = req.query.paymentMethod || null;
       const status = req.query.status || null;
@@ -17,6 +19,8 @@ class InvoiceController {
         search,
         startDate,
         endDate,
+        startTime,
+        endTime,
         userId,
         paymentMethod,
         status,
