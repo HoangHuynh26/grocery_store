@@ -174,9 +174,47 @@ const tools = {
 
     return {
       period: range.label,
+      dateDisplay: range.dateDisplay,
+      hourDisplay: range.hourDisplay,
+      isHourly: !!range.isHourly,
+      targetHour: range.targetHour,
       revenue: parseFloat(row.total_revenue),
       invoiceCount: parseInt(row.invoice_count, 10),
       unitsSold: parseInt(itemsRes.rows[0]?.total_units || 0, 10)
+    };
+  },
+
+  /**
+   * Tool: get_hourly_breakdown
+   */
+  async getHourlyBreakdown({ dateRangeText }) {
+    const range = parseVietnameseNaturalDate(dateRangeText) || parseVietnameseNaturalDate('hôm nay');
+    let startDate = range.startDate;
+    let endDate = range.endDate;
+    if (range.isHourly) {
+      const fullDay = parseVietnameseNaturalDate(range.dateDisplay) || parseVietnameseNaturalDate('hôm nay');
+      startDate = fullDay.startDate;
+      endDate = fullDay.endDate;
+    }
+
+    const sql = `
+      SELECT 
+        EXTRACT(HOUR FROM created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::int as hour,
+        COUNT(id) as invoice_count,
+        COALESCE(SUM(total_amount), 0) as revenue
+      FROM invoices
+      WHERE created_at >= $1 AND created_at <= $2 AND status != 'CANCELLED'
+      GROUP BY hour
+      ORDER BY hour ASC;
+    `;
+    const res = await query(sql, [startDate, endDate]);
+    return {
+      period: range.dateDisplay || range.label,
+      hours: res.rows.map(r => ({
+        hour: parseInt(r.hour, 10),
+        invoiceCount: parseInt(r.invoice_count, 10),
+        revenue: parseFloat(r.revenue)
+      }))
     };
   },
 

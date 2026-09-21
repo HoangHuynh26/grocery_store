@@ -241,6 +241,30 @@ async function runTests() {
     body: JSON.stringify({ message: 'Doanh thu hôm nay bao nhiêu?' })
   });
   assert(chat1.status === 200 && chat1.data.data.reply.includes('Doanh thu'), 'AI Assistant answered today revenue query');
+  assert(!chat1.data.data.reply.includes('*'), 'AI Assistant response has 0 asterisks (*)');
+
+  // Hourly specific revenue inquiry (User specific case: "vào lúc 13 giờ hôm nay có doanh thu nào không")
+  const chatHour13 = await request('/ai/chat', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ message: 'vào lúc 13 giờ hôm nay có doanh thu nào không' })
+  });
+  assert(chatHour13.status === 200, 'AI Assistant handled specific hour 13 revenue query');
+  assert(chatHour13.data.data.reply.includes('13:00'), 'AI Assistant response specifies hour 13:00');
+  assert(
+    chatHour13.data.data.reply.includes('không có doanh thu') || chatHour13.data.data.reply.includes('0đ') || chatHour13.data.data.reply.includes('có ghi nhận doanh thu'),
+    'AI Assistant accurately answers whether there was revenue at hour 13'
+  );
+  assert(!chatHour13.data.data.reply.includes('*'), 'Hour 13 response has 0 asterisks (*)');
+
+  // Hourly breakdown inquiry
+  const chatHourlyBreakdown = await request('/ai/chat', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ message: 'doanh thu theo từng khung giờ hôm nay' })
+  });
+  assert(chatHourlyBreakdown.status === 200, 'AI Assistant handled hourly breakdown query');
+  assert(!chatHourlyBreakdown.data.data.reply.includes('*'), 'Hourly breakdown response has 0 asterisks (*)');
 
   const chatPrice = await request('/ai/chat', {
     method: 'POST',
@@ -248,6 +272,7 @@ async function runTests() {
     body: JSON.stringify({ message: 'Giá của Coca Cola là bao nhiêu?' })
   });
   assert(chatPrice.status === 200 && chatPrice.data.data.reply.includes('Coca Cola'), 'AI Assistant answered specific product price inquiry');
+  assert(!chatPrice.data.data.reply.includes('*'), 'Price inquiry response has 0 asterisks (*)');
 
   const chatStoreCount = await request('/ai/chat', {
     method: 'POST',
@@ -255,6 +280,7 @@ async function runTests() {
     body: JSON.stringify({ message: 'Cửa hàng có bao nhiêu sản phẩm?' })
   });
   assert(chatStoreCount.status === 200 && chatStoreCount.data.data.reply.includes('mặt hàng'), 'AI Assistant answered store product count inquiry');
+  assert(!chatStoreCount.data.data.reply.includes('*'), 'Store count response has 0 asterisks (*)');
 
   const chatCat = await request('/ai/chat', {
     method: 'POST',
@@ -262,6 +288,7 @@ async function runTests() {
     body: JSON.stringify({ message: 'Có những danh mục nào?' })
   });
   assert(chatCat.status === 200 && chatCat.data.data.reply.includes('DANH MỤC'), 'AI Assistant answered categories inquiry');
+  assert(!chatCat.data.data.reply.includes('*'), 'Categories response has 0 asterisks (*)');
 
   const chat2 = await request('/ai/chat', {
     method: 'POST',
@@ -269,6 +296,7 @@ async function runTests() {
     body: JSON.stringify({ message: 'Dự đoán doanh thu tháng tới?' })
   });
   assert(chat2.status === 200 && chat2.data.data.reply.includes('DỰ BÁO DOANH THU'), 'AI Assistant answered revenue forecast query');
+  assert(!chat2.data.data.reply.includes('*'), 'Forecast response has 0 asterisks (*)');
 
   // TEST 9: AI Product Auto-Classification
   console.log('\n[9] Testing AI Product Auto-Classification Engine...');
