@@ -46,7 +46,7 @@ export default function AnalyticsPage() {
     datasets: [{
       data: chartData?.paymentBreakdown?.map(p => parseFloat(p.total_amount)) || [],
       backgroundColor: ['#10b981', '#3b82f6'],
-      borderColor: '#131b2e',
+      borderColor: '#ffffff',
       borderWidth: 2
     }]
   };

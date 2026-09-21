@@ -27,20 +27,23 @@ export default function MobileBottomNav() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: 'var(--bg-card)',
-              borderTop: '1px solid var(--border-color)',
-              borderTopLeftRadius: '20px',
-              borderTopRightRadius: '20px',
+              backgroundColor: 'rgba(255, 255, 255, 0.94)',
+              backdropFilter: 'blur(28px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.9)',
+              borderTopLeftRadius: '24px',
+              borderTopRightRadius: '24px',
               padding: '20px 16px calc(24px + env(safe-area-inset-bottom, 0px)) 16px',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px',
               maxHeight: '80vh',
-              overflowY: 'auto'
+              overflowY: 'auto',
+              boxShadow: '0 -10px 40px rgba(15, 23, 42, 0.12)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <div style={{ fontWeight: 700, fontSize: '16px' }}>Menu Chức Năng</div>
+              <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>Menu Chức Năng</div>
               <button
                 onClick={() => setMenuOpen(false)}
                 className="btn btn-secondary btn-icon"
@@ -107,21 +110,23 @@ export default function MobileBottomNav() {
         </div>
       )}
 
-      {/* Main Bottom Bar */}
+      {/* Apple Liquid Glass Main Bottom Bar */}
       <div style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
         height: 'calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px))',
-        backgroundColor: 'var(--bg-card)',
-        borderTop: '1px solid var(--border-color)',
+        backgroundColor: 'rgba(255, 255, 255, 0.82)',
+        backdropFilter: 'blur(28px) saturate(190%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+        borderTop: '1px solid rgba(226, 232, 240, 0.85)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-around',
         zIndex: 800,
-        padding: '0 4px env(safe-area-inset-bottom, 0px) 4px',
-        boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.4)'
+        padding: '6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px',
+        boxShadow: '0 -4px 24px rgba(15, 23, 42, 0.07), 0 -1px 2px rgba(15, 23, 42, 0.04)'
       }} className="mobile-bottom-nav">
         <NavLink
           to="/pos"
@@ -130,15 +135,20 @@ export default function MobileBottomNav() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: '3px',
             textDecoration: 'none',
             fontSize: '11px',
-            fontWeight: 600,
+            fontWeight: isActive ? 700 : 600,
             color: isActive ? 'var(--primary)' : 'var(--text-muted)',
             flex: 1,
-            height: '100%'
+            height: '100%',
+            padding: '4px 2px',
+            borderRadius: '12px',
+            backgroundColor: isActive ? 'rgba(5, 150, 105, 0.09)' : 'transparent',
+            transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)'
           })}
         >
-          <ShoppingCart size={20} />
+          <ShoppingCart size={21} strokeWidth={2.2} />
           <span>POS</span>
         </NavLink>
 
@@ -149,15 +159,20 @@ export default function MobileBottomNav() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: '3px',
             textDecoration: 'none',
             fontSize: '11px',
-            fontWeight: 600,
+            fontWeight: isActive ? 700 : 600,
             color: isActive ? 'var(--primary)' : 'var(--text-muted)',
             flex: 1,
-            height: '100%'
+            height: '100%',
+            padding: '4px 2px',
+            borderRadius: '12px',
+            backgroundColor: isActive ? 'rgba(5, 150, 105, 0.09)' : 'transparent',
+            transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)'
           })}
         >
-          <LayoutDashboard size={20} />
+          <LayoutDashboard size={21} strokeWidth={2.2} />
           <span>Tổng quan</span>
         </NavLink>
 
@@ -168,15 +183,20 @@ export default function MobileBottomNav() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: '3px',
             textDecoration: 'none',
             fontSize: '11px',
-            fontWeight: 600,
+            fontWeight: isActive ? 700 : 600,
             color: isActive ? 'var(--primary)' : 'var(--text-muted)',
             flex: 1,
-            height: '100%'
+            height: '100%',
+            padding: '4px 2px',
+            borderRadius: '12px',
+            backgroundColor: isActive ? 'rgba(5, 150, 105, 0.09)' : 'transparent',
+            transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)'
           })}
         >
-          <Boxes size={20} />
+          <Boxes size={21} strokeWidth={2.2} />
           <span>Kho</span>
         </NavLink>
 
@@ -187,15 +207,20 @@ export default function MobileBottomNav() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: '3px',
             textDecoration: 'none',
             fontSize: '11px',
-            fontWeight: 600,
+            fontWeight: isActive ? 700 : 600,
             color: isActive ? 'var(--primary)' : 'var(--text-muted)',
             flex: 1,
-            height: '100%'
+            height: '100%',
+            padding: '4px 2px',
+            borderRadius: '12px',
+            backgroundColor: isActive ? 'rgba(5, 150, 105, 0.09)' : 'transparent',
+            transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)'
           })}
         >
-          <FileText size={20} />
+          <FileText size={21} strokeWidth={2.2} />
           <span>Hóa đơn</span>
         </NavLink>
 
@@ -206,17 +231,21 @@ export default function MobileBottomNav() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'none',
+            gap: '3px',
+            background: menuOpen ? 'rgba(5, 150, 105, 0.09)' : 'none',
             border: 'none',
             fontSize: '11px',
             fontWeight: 600,
             color: menuOpen ? 'var(--primary)' : 'var(--text-muted)',
             flex: 1,
             height: '100%',
-            cursor: 'pointer'
+            padding: '4px 2px',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
-          <Menu size={20} />
+          <Menu size={21} strokeWidth={2.2} />
           <span>Thêm</span>
         </button>
       </div>

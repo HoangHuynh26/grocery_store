@@ -11,15 +11,18 @@ export default function Navbar({ onOpenQrScanner }) {
   return (
     <header style={{
       height: 'var(--header-height)',
-      backgroundColor: 'var(--bg-card)',
-      borderBottom: '1px solid var(--border-color)',
+      backgroundColor: 'rgba(255, 255, 255, 0.82)',
+      backdropFilter: 'blur(28px) saturate(190%)',
+      WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+      borderBottom: '1px solid rgba(226, 232, 240, 0.85)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 16px',
+      padding: '0 20px',
       position: 'sticky',
       top: 0,
-      zIndex: 100
+      zIndex: 100,
+      boxShadow: '0 2px 16px rgba(15, 23, 42, 0.03)'
     }} className="app-navbar">
       {/* Brand & Title */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -3,6 +3,7 @@ import { formatDateTime } from '../utils/formatters';
 import api from '../services/api';
 import { Users, Plus, ShieldCheck, UserCheck, Lock, RefreshCw, KeyRound } from 'lucide-react';
 import Modal from '../components/common/Modal';
+import ToggleSwitch from '../components/common/ToggleSwitch';
 
 export default function AdminsPage() {
   const [users, setUsers] = useState([]);
@@ -173,9 +174,12 @@ export default function AdminsPage() {
                       </span>
                     </td>
                     <td>
-                      <span className={`badge ${u.is_active ? 'badge-success' : 'badge-danger'}`}>
-                        {u.is_active ? 'Hoạt động' : 'Tạm khóa'}
-                      </span>
+                      <ToggleSwitch
+                        checked={u.is_active}
+                        onChange={() => handleToggleStatus(u)}
+                        label={u.is_active ? 'Hoạt động' : 'Tạm khóa'}
+                        size="sm"
+                      />
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <button

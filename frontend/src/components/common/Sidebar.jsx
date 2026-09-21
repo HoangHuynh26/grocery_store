@@ -36,14 +36,16 @@ export default function Sidebar() {
   return (
     <aside style={{
       width: 'var(--sidebar-width)',
-      backgroundColor: 'var(--bg-card)',
-      borderRight: '1px solid var(--border-color)',
+      backgroundColor: 'rgba(255, 255, 255, 0.88)',
+      backdropFilter: 'blur(24px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+      borderRight: '1px solid rgba(226, 232, 240, 0.85)',
       display: 'none',
       flexDirection: 'column',
       minHeight: 'calc(100vh - var(--header-height))',
       padding: '20px 12px'
     }} className="desktop-sidebar">
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -59,15 +61,18 @@ export default function Sidebar() {
                 textDecoration: 'none',
                 fontSize: '14px',
                 fontWeight: isActive ? 600 : 500,
-                color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                color: isActive
+                  ? (item.highlight ? '#ffffff' : 'var(--primary)')
+                  : 'var(--text-secondary)',
                 backgroundColor: isActive
-                  ? (item.highlight ? 'var(--primary)' : 'var(--bg-card-secondary)')
+                  ? (item.highlight ? 'var(--primary)' : 'var(--primary-light)')
                   : 'transparent',
+                boxShadow: isActive && item.highlight ? '0 4px 14px rgba(5, 150, 105, 0.28)' : 'none',
                 borderLeft: isActive && !item.highlight ? '3px solid var(--primary)' : '3px solid transparent',
-                transition: 'all 0.15s ease'
+                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
               })}
             >
-              <Icon size={18} color={item.highlight ? '#10b981' : undefined} />
+              <Icon size={18} color={item.highlight ? (undefined) : undefined} />
               <span>{item.label}</span>
             </NavLink>
           );
