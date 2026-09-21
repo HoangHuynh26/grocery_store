@@ -6,7 +6,8 @@ const {
   findByQrToken, 
   createProduct, 
   updateProduct, 
-  softDeleteProduct 
+  softDeleteProduct,
+  getTopSellingProducts
 } = require('../repositories/productRepository');
 const { generateQrToken } = require('../utils/idGenerator');
 const { createAuditLog } = require('../repositories/auditRepository');
@@ -15,6 +16,11 @@ const { AppError } = require('../middleware/errorHandler');
 class ProductService {
   static async getProducts(filters) {
     return await listProducts(filters);
+  }
+
+  static async getTopSellingProducts(limit = 10) {
+    const cleanLimit = Math.max(1, Math.min(parseInt(limit || '10', 10), 50));
+    return await getTopSellingProducts({ limit: cleanLimit });
   }
 
   static async getProductById(id) {

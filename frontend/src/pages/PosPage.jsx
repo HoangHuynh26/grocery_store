@@ -4,7 +4,7 @@ import { useSocket } from '../contexts/SocketContext';
 import { formatCurrency } from '../utils/formatters';
 import api from '../services/api';
 import confetti from 'canvas-confetti';
-import { QrCode, Search, ShoppingBag, Plus, AlertTriangle, Check, RefreshCw, Package, Filter, ChevronDown, X } from 'lucide-react';
+import { QrCode, Search, ShoppingBag, Plus, AlertTriangle, Check, RefreshCw, Package, Filter, ChevronDown, X, Flame, Sparkles } from 'lucide-react';
 import QrScannerModal from '../components/pos/QrScannerModal';
 import CartDrawer from '../components/pos/CartDrawer';
 import ReceiptModal from '../components/pos/ReceiptModal';
@@ -15,6 +15,7 @@ export default function PosPage() {
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [topSellingProducts, setTopSellingProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -24,16 +25,18 @@ export default function PosPage() {
   const [completedInvoice, setCompletedInvoice] = useState(null);
   const [addedAnimationId, setAddedAnimationId] = useState(null);
 
-  // Fetch products and categories
+  // Fetch products, categories, and top-selling products
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [prodRes, catRes] = await Promise.all([
+      const [prodRes, catRes, topRes] = await Promise.all([
         api.get('/products?limit=100'),
-        api.get('/categories')
+        api.get('/categories'),
+        api.get('/products/top-selling?limit=10')
       ]);
       setProducts(prodRes.data?.items || []);
       setCategories(catRes.data || []);
+      setTopSellingProducts(topRes.data || []);
     } catch (err) {
       console.error('Load POS data error:', err);
     } finally {
@@ -52,6 +55,16 @@ export default function PosPage() {
       const updateMap = new Map(updates.map(u => [u.productId, u.currentStock]));
 
       setProducts(prev => prev.map(p => {
+        if (updateMap.has(p.id)) {
+          return {
+            ...p,
+            stock_quantity: updateMap.get(p.id)
+          };
+        }
+        return p;
+      }));
+
+      setTopSellingProducts(prev => prev.map(p => {
         if (updateMap.has(p.id)) {
           return {
             ...p,
@@ -228,20 +241,186 @@ export default function PosPage() {
           </div>
         )}
 
-        {/* Product Grid */}
+        {/* Product Grid & Top Selling Shelf */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
             <RefreshCw size={28} className="spin" style={{ marginBottom: '12px' }} />
             <div>Đang tải danh mục sản phẩm...</div>
           </div>
-        ) : filteredProducts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-            <ShoppingBag size={40} style={{ marginBottom: '12px', opacity: 0.4 }} />
-            <div style={{ fontWeight: 600, fontSize: '16px' }}>Không tìm thấy sản phẩm phù hợp</div>
-            <div style={{ fontSize: '13px', marginTop: '4px' }}>Thử tìm kiếm với từ khóa khác hoặc quét mã QR.</div>
-          </div>
         ) : (
-          <div className="pos-product-grid">
+          <>
+            {/* Top 10 Best-Selling Products Section */}
+            {!searchQuery && topSellingProducts.length > 0 && (
+              <div className="pos-top-selling-section">
+                <div className="pos-top-selling-header">
+                  <div className="pos-top-selling-title">
+                    <Flame size={18} color="#ea580c" />
+                    <span>Sản Phẩm Bán Chạy Nhất</span>
+                    <span className="pos-top-selling-badge">
+                      <Sparkles size={11} />
+                      Top {topSellingProducts.length}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#9a3412', fontWeight: 500 }}>
+                    Chạm nhanh để thêm vào giỏ
+                  </span>
+                </div>
+
+                <div className="pos-top-selling-scroll">
+                  {topSellingProducts.map((p, idx) => {
+                    const rank = idx + 1;
+                    const isOutOfStock = p.stock_quantity <= 0;
+                    const isLowStock = p.stock_quantity > 0 && p.stock_quantity <= p.minimum_stock;
+                    const isAdded = addedAnimationId === p.id;
+                    const rankClass = rank === 1 ? 'rank-1' : (rank === 2 ? 'rank-2' : (rank === 3 ? 'rank-3' : 'rank-other'));
+
+                    return (
+                      <div
+                        key={`top-${p.id}`}
+                        onClick={() => !isOutOfStock && handleProductAdd(p)}
+                        className={`pos-top-selling-card ${isOutOfStock ? 'out-of-stock' : ''}`}
+                        style={{
+                          borderColor: isAdded ? 'var(--primary)' : undefined,
+                          transform: isAdded ? 'scale(0.96)' : undefined
+                        }}
+                        title={isOutOfStock ? 'Hết hàng' : `Thêm "${p.name}" vào đơn`}
+                      >
+                        {/* Rank Badge */}
+                        <span className={`pos-top-selling-rank ${rankClass}`}>
+                          #{rank}
+                        </span>
+
+                        {/* Sales count badge */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            color: p.total_sold > 0 ? '#ea580c' : 'var(--text-muted)',
+                            backgroundColor: p.total_sold > 0 ? '#ffedd5' : 'var(--bg-card-secondary)',
+                            padding: '1px 6px',
+                            borderRadius: 'var(--radius-full)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '2px'
+                          }}>
+                            {p.total_sold > 0 ? `Đã bán ${p.total_sold}` : 'Ưa chuộng'}
+                          </span>
+                        </div>
+
+                        {/* Image / Icon */}
+                        <div style={{
+                          height: '62px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: '6px',
+                          backgroundColor: 'var(--bg-app)',
+                          borderRadius: 'var(--radius-sm)',
+                          overflow: 'hidden'
+                        }}>
+                          {p.image_url ? (
+                            <img
+                              src={p.image_url}
+                              alt={p.name}
+                              style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+                            />
+                          ) : (
+                            <Package size={28} color="var(--text-muted)" style={{ opacity: 0.6 }} />
+                          )}
+                        </div>
+
+                        {/* Name */}
+                        <div
+                          title={p.name}
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            lineHeight: '1.3',
+                            height: '31px',
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            marginBottom: '6px'
+                          }}
+                        >
+                          {p.name}
+                        </div>
+
+                        {/* Price & Action Row */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginTop: 'auto',
+                          paddingTop: '4px',
+                          borderTop: '1px dashed var(--border-color)'
+                        }}>
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)' }}>
+                              {formatCurrency(p.selling_price)}
+                            </div>
+                            <div style={{
+                              fontSize: '10px',
+                              fontWeight: 500,
+                              color: isOutOfStock ? 'var(--danger)' : (isLowStock ? 'var(--warning)' : 'var(--text-muted)')
+                            }}>
+                              {isOutOfStock ? 'Hết hàng' : `Kho: ${p.stock_quantity}`}
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={isOutOfStock}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              !isOutOfStock && handleProductAdd(p);
+                            }}
+                            style={{
+                              width: '26px',
+                              height: '26px',
+                              borderRadius: '50%',
+                              backgroundColor: isOutOfStock ? 'var(--border-color)' : 'var(--primary)',
+                              color: '#ffffff',
+                              border: 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                              padding: 0,
+                              flexShrink: 0
+                            }}
+                            title="Thêm vào đơn"
+                          >
+                            {isAdded ? <Check size={14} /> : <Plus size={14} />}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Catalog Section Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                {selectedCategory !== 'all' ? selectedCategoryName : 'Tất cả sản phẩm'}
+                <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginLeft: '6px' }}>
+                  ({filteredProducts.length})
+                </span>
+              </span>
+            </div>
+
+            {filteredProducts.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+                <ShoppingBag size={40} style={{ marginBottom: '12px', opacity: 0.4 }} />
+                <div style={{ fontWeight: 600, fontSize: '16px' }}>Không tìm thấy sản phẩm phù hợp</div>
+                <div style={{ fontSize: '13px', marginTop: '4px' }}>Thử tìm kiếm với từ khóa khác hoặc quét mã QR.</div>
+              </div>
+            ) : (
+              <div className="pos-product-grid">
             {filteredProducts.map((p) => {
               const isOutOfStock = p.stock_quantity <= 0;
               const isLowStock = p.stock_quantity > 0 && p.stock_quantity <= p.minimum_stock;
@@ -371,7 +550,9 @@ export default function PosPage() {
                 </div>
               );
             })}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
