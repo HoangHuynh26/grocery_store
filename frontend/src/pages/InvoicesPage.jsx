@@ -241,120 +241,426 @@ export default function InvoicesPage() {
         </table>
       </div>
 
-      {/* Invoice Details Modal */}
+      {/* Invoice Receipt Modal */}
       {viewInvoice && (
         <Modal
           isOpen={!!viewInvoice}
           onClose={() => setViewInvoice(null)}
-          title={`Chi Tiết Hóa Đơn: ${viewInvoice.invoice_number}`}
-          maxWidth="640px"
+          title=""
+          maxWidth="420px"
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Meta header */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-              gap: '10px',
-              padding: '12px 14px',
-              backgroundColor: 'var(--bg-card-secondary)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '13px'
-            }}>
-              <div>Thời gian: <strong>{formatDateTime(viewInvoice.created_at)}</strong></div>
-              <div>Thu ngân: <strong>{viewInvoice.created_by_name}</strong></div>
-              <div>Phương thức: <strong>{viewInvoice.payment_method === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản'}</strong></div>
-              <div>Trạng thái: <strong>{viewInvoice.status}</strong></div>
+          <div className="receipt-paper">
+            {/* Receipt Header - Store Brand */}
+            <div className="receipt-header">
+              <div className="receipt-logo">🛒</div>
+              <div className="receipt-store-name">GROCERY STORE</div>
+              <div className="receipt-store-sub">Tạp Hóa Thông Minh - Hệ Thống POS</div>
+              <div className="receipt-divider-double" />
             </div>
 
-            {/* Items list */}
-            <div>
-              <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '8px' }}>Danh Sách Hàng Hóa:</div>
-              <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-                <table className="table" style={{ margin: 0 }}>
-                  <thead>
-                    <tr>
-                      <th>Sản phẩm</th>
-                      <th>SL</th>
-                      <th>Đơn giá</th>
-                      <th style={{ textAlign: 'right' }}>Thành tiền</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {viewInvoice.items?.map((item) => (
-                      <tr key={item.id}>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{item.product_name}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.product_code}</div>
-                        </td>
-                        <td>{item.quantity} {item.unit}</td>
-                        <td>{formatCurrency(item.unit_price)}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 700 }}>
-                          {formatCurrency(item.total_price)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Invoice Number */}
+            <div className="receipt-invoice-number">
+              <div className="receipt-label">HÓA ĐƠN BÁN HÀNG</div>
+              <div className="receipt-inv-code">{viewInvoice.invoice_number}</div>
+            </div>
+
+            <div className="receipt-divider-dashed" />
+
+            {/* Meta Info */}
+            <div className="receipt-meta">
+              <div className="receipt-meta-row">
+                <span>Ngày giờ:</span>
+                <span>{formatDateTime(viewInvoice.created_at)}</span>
+              </div>
+              <div className="receipt-meta-row">
+                <span>Thu ngân:</span>
+                <span style={{ fontWeight: 600 }}>{viewInvoice.created_by_name}</span>
+              </div>
+              <div className="receipt-meta-row">
+                <span>Thanh toán:</span>
+                <span>{viewInvoice.payment_method === 'CASH' ? '💵 Tiền mặt' : '🏦 Chuyển khoản'}</span>
+              </div>
+              <div className="receipt-meta-row">
+                <span>Trạng thái:</span>
+                <span className={`receipt-status ${viewInvoice.status === 'COMPLETED' ? 'receipt-status-ok' : viewInvoice.status === 'ADJUSTED' ? 'receipt-status-warn' : 'receipt-status-cancel'}`}>
+                  {viewInvoice.status === 'COMPLETED' ? '✓ Hoàn Tất' : viewInvoice.status === 'ADJUSTED' ? '⚙ Đã Sửa' : '✕ Đã Hủy'}
+                </span>
               </div>
             </div>
+
+            <div className="receipt-divider-dashed" />
+
+            {/* Items Table */}
+            <div className="receipt-items-header">
+              <span style={{ flex: 2, textAlign: 'left' }}>Sản phẩm</span>
+              <span style={{ flex: 0.6, textAlign: 'center' }}>SL</span>
+              <span style={{ flex: 1, textAlign: 'right' }}>Đơn giá</span>
+              <span style={{ flex: 1, textAlign: 'right' }}>T.Tiền</span>
+            </div>
+
+            <div className="receipt-divider-thin" />
+
+            {viewInvoice.items?.map((item, idx) => (
+              <div key={item.id} className="receipt-item-row">
+                <div className="receipt-item-name-row">
+                  <span className="receipt-item-name">{item.product_name}</span>
+                </div>
+                <div className="receipt-item-detail-row">
+                  <span className="receipt-item-code">{item.product_code}</span>
+                  <span style={{ flex: 0.6, textAlign: 'center', fontFamily: 'monospace' }}>{item.quantity} {item.unit}</span>
+                  <span style={{ flex: 1, textAlign: 'right', fontFamily: 'monospace' }}>{formatCurrency(item.unit_price)}</span>
+                  <span style={{ flex: 1, textAlign: 'right', fontWeight: 700, fontFamily: 'monospace' }}>{formatCurrency(item.total_price)}</span>
+                </div>
+                {idx < viewInvoice.items.length - 1 && <div className="receipt-item-sep" />}
+              </div>
+            ))}
+
+            <div className="receipt-divider-double" />
 
             {/* Payment Summary */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px',
-              alignItems: 'flex-end',
-              paddingTop: '8px'
-            }}>
-              <div style={{ fontSize: '16px', fontWeight: 800 }}>
-                Tổng cộng: <span style={{ color: 'var(--primary)' }}>{formatCurrency(viewInvoice.total_amount)}</span>
+            <div className="receipt-summary">
+              {viewInvoice.discount_amount > 0 && (
+                <>
+                  <div className="receipt-summary-row">
+                    <span>Tạm tính:</span>
+                    <span>{formatCurrency(Number(viewInvoice.total_amount) + Number(viewInvoice.discount_amount))}</span>
+                  </div>
+                  <div className="receipt-summary-row" style={{ color: 'var(--danger)' }}>
+                    <span>Chiết khấu:</span>
+                    <span>-{formatCurrency(viewInvoice.discount_amount)}</span>
+                  </div>
+                </>
+              )}
+              <div className="receipt-total-row">
+                <span>TỔNG CỘNG</span>
+                <span className="receipt-total-amount">{formatCurrency(viewInvoice.total_amount)}</span>
               </div>
               {viewInvoice.payment_method === 'CASH' && (
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Khách đưa: {formatCurrency(viewInvoice.amount_paid)} • Tiền thối: {formatCurrency(viewInvoice.change_amount)}
-                </div>
+                <>
+                  <div className="receipt-summary-row" style={{ marginTop: '6px' }}>
+                    <span>Khách đưa:</span>
+                    <span>{formatCurrency(viewInvoice.amount_paid)}</span>
+                  </div>
+                  <div className="receipt-summary-row receipt-change">
+                    <span>Tiền thối:</span>
+                    <span>{formatCurrency(viewInvoice.change_amount)}</span>
+                  </div>
+                </>
               )}
             </div>
 
-            {/* Audit Trail for this invoice if adjusted */}
+            <div className="receipt-divider-dashed" />
+
+            {/* Items Count */}
+            <div className="receipt-footer-info">
+              Tổng số mặt hàng: {viewInvoice.items?.length || 0} &nbsp;|&nbsp; Tổng SL: {viewInvoice.items?.reduce((s, i) => s + i.quantity, 0) || 0} đơn vị
+            </div>
+
+            {/* Audit Trail */}
             {viewInvoice.audit_logs && viewInvoice.audit_logs.length > 0 && (
-              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--warning)', marginBottom: '8px' }}>
-                  <History size={14} /> Lịch Sử Điều Chỉnh Hóa Đơn (Audit Log)
-                </div>
-                {viewInvoice.audit_logs.map((log) => (
-                  <div key={log.id} style={{
-                    padding: '8px 12px',
-                    backgroundColor: 'var(--bg-card-secondary)',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: '12px',
-                    marginBottom: '6px'
-                  }}>
-                    <div>{formatDateTime(log.created_at)} - Người sửa: <strong>{log.actor_name || 'Super Admin'}</strong></div>
-                    <div style={{ color: 'var(--text-muted)', marginTop: '2px' }}>Lý do: {log.reason}</div>
+              <>
+                <div className="receipt-divider-dashed" />
+                <div className="receipt-audit-section">
+                  <div className="receipt-audit-title">
+                    <History size={12} /> Lịch Sử Điều Chỉnh
                   </div>
-                ))}
-              </div>
+                  {viewInvoice.audit_logs.map((log) => (
+                    <div key={log.id} className="receipt-audit-entry">
+                      <div style={{ fontSize: '11px', fontFamily: 'monospace' }}>{formatDateTime(log.created_at)}</div>
+                      <div style={{ fontSize: '11px' }}>Bởi: <strong>{log.actor_name || 'Super Admin'}</strong></div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Lý do: {log.reason}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => window.print()}
-              >
-                <Printer size={16} />
-                <span>In Hóa Đơn</span>
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => setViewInvoice(null)}
-              >
-                Đóng
-              </button>
+            <div className="receipt-divider-dashed" />
+
+            {/* Thank you footer */}
+            <div className="receipt-thank-you">
+              <div>✦ Cảm ơn quý khách ✦</div>
+              <div className="receipt-come-again">Hẹn gặp lại lần sau!</div>
             </div>
+
+            {/* Tear edge */}
+            <div className="receipt-tear-edge" />
           </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '16px', padding: '0 12px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => window.print()}
+              style={{ flex: 1 }}
+            >
+              <Printer size={16} />
+              <span>In Hóa Đơn</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setViewInvoice(null)}
+              style={{ flex: 1 }}
+            >
+              Đóng
+            </button>
+          </div>
+
+          <style>{`
+            .receipt-paper {
+              background: #fffef8;
+              border: 1px solid #e8e4d9;
+              border-radius: 4px;
+              padding: 24px 20px;
+              font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+              font-size: 12px;
+              color: #1a1a1a;
+              position: relative;
+              box-shadow: 0 4px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+              overflow: hidden;
+            }
+            .receipt-paper::before {
+              content: '';
+              position: absolute;
+              top: 0; left: 0; right: 0;
+              height: 4px;
+              background: repeating-linear-gradient(90deg, var(--primary), var(--primary) 4px, transparent 4px, transparent 8px);
+              opacity: 0.6;
+            }
+
+            .receipt-header {
+              text-align: center;
+              padding-top: 8px;
+              margin-bottom: 12px;
+            }
+            .receipt-logo {
+              font-size: 32px;
+              margin-bottom: 4px;
+              line-height: 1;
+            }
+            .receipt-store-name {
+              font-size: 20px;
+              font-weight: 900;
+              letter-spacing: 3px;
+              color: #0f172a;
+              font-family: var(--font-family);
+            }
+            .receipt-store-sub {
+              font-size: 10px;
+              color: #64748b;
+              letter-spacing: 0.5px;
+              margin-top: 2px;
+              font-family: var(--font-family);
+            }
+
+            .receipt-invoice-number {
+              text-align: center;
+              margin: 8px 0;
+            }
+            .receipt-label {
+              font-size: 11px;
+              font-weight: 700;
+              letter-spacing: 2px;
+              color: #334155;
+              font-family: var(--font-family);
+            }
+            .receipt-inv-code {
+              font-size: 13px;
+              font-weight: 800;
+              color: var(--primary);
+              letter-spacing: 0.5px;
+              margin-top: 3px;
+              word-break: break-all;
+            }
+
+            .receipt-divider-double {
+              border: none;
+              height: 3px;
+              border-top: 1.5px solid #c8c3b5;
+              border-bottom: 1.5px solid #c8c3b5;
+              margin: 10px 0;
+            }
+            .receipt-divider-dashed {
+              border: none;
+              border-top: 1.5px dashed #d4cfc3;
+              margin: 10px 0;
+            }
+            .receipt-divider-thin {
+              border: none;
+              border-top: 1px solid #e8e4d9;
+              margin: 6px 0;
+            }
+
+            .receipt-meta {
+              display: flex;
+              flex-direction: column;
+              gap: 5px;
+            }
+            .receipt-meta-row {
+              display: flex;
+              justify-content: space-between;
+              font-size: 12px;
+              font-family: var(--font-family);
+            }
+            .receipt-meta-row span:first-child {
+              color: #64748b;
+            }
+
+            .receipt-status {
+              font-weight: 700;
+              font-size: 11px;
+              padding: 1px 8px;
+              border-radius: 4px;
+            }
+            .receipt-status-ok {
+              color: #059669;
+              background: #ecfdf5;
+            }
+            .receipt-status-warn {
+              color: #d97706;
+              background: #fffbeb;
+            }
+            .receipt-status-cancel {
+              color: #dc2626;
+              background: #fef2f2;
+            }
+
+            .receipt-items-header {
+              display: flex;
+              font-size: 11px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              color: #334155;
+              padding: 4px 0;
+              font-family: var(--font-family);
+            }
+
+            .receipt-item-row {
+              padding: 6px 0;
+            }
+            .receipt-item-name-row {
+              margin-bottom: 2px;
+            }
+            .receipt-item-name {
+              font-weight: 700;
+              font-size: 12px;
+              font-family: var(--font-family);
+              color: #0f172a;
+            }
+            .receipt-item-detail-row {
+              display: flex;
+              align-items: center;
+              font-size: 11px;
+            }
+            .receipt-item-code {
+              flex: 2;
+              font-size: 10px;
+              color: #94a3b8;
+              letter-spacing: 0.3px;
+            }
+            .receipt-item-sep {
+              border-top: 1px dotted #e2ddd0;
+              margin-top: 6px;
+            }
+
+            .receipt-summary {
+              padding: 6px 0;
+            }
+            .receipt-summary-row {
+              display: flex;
+              justify-content: space-between;
+              font-size: 12px;
+              font-family: var(--font-family);
+              padding: 2px 0;
+            }
+            .receipt-total-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-size: 14px;
+              font-weight: 900;
+              padding: 6px 0;
+              margin-top: 2px;
+              font-family: var(--font-family);
+            }
+            .receipt-total-amount {
+              font-size: 20px;
+              color: var(--primary);
+              font-weight: 900;
+              letter-spacing: -0.5px;
+            }
+            .receipt-change {
+              color: #0284c7;
+              font-weight: 600;
+            }
+
+            .receipt-footer-info {
+              text-align: center;
+              font-size: 11px;
+              color: #64748b;
+              font-family: var(--font-family);
+            }
+
+            .receipt-audit-section {
+              padding: 4px 0;
+            }
+            .receipt-audit-title {
+              display: flex;
+              align-items: center;
+              gap: 5px;
+              font-size: 11px;
+              font-weight: 700;
+              color: #d97706;
+              margin-bottom: 6px;
+              font-family: var(--font-family);
+            }
+            .receipt-audit-entry {
+              padding: 5px 8px;
+              background: #fefce8;
+              border-radius: 4px;
+              margin-bottom: 4px;
+              border-left: 3px solid #d97706;
+              font-family: var(--font-family);
+            }
+
+            .receipt-thank-you {
+              text-align: center;
+              padding: 8px 0 4px;
+              font-family: var(--font-family);
+            }
+            .receipt-thank-you > div:first-child {
+              font-size: 14px;
+              font-weight: 700;
+              color: #0f172a;
+              letter-spacing: 1px;
+            }
+            .receipt-come-again {
+              font-size: 11px;
+              color: #64748b;
+              margin-top: 3px;
+              font-style: italic;
+            }
+
+            .receipt-tear-edge {
+              position: absolute;
+              bottom: 0; left: 0; right: 0;
+              height: 8px;
+              background: linear-gradient(135deg, #fffef8 33.33%, transparent 33.33%, transparent 50%, #fffef8 50%, #fffef8 83.33%, transparent 83.33%);
+              background-size: 12px 12px;
+              transform: translateY(4px);
+            }
+
+            @media print {
+              .receipt-paper {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+              }
+            }
+          `}</style>
         </Modal>
       )}
 
