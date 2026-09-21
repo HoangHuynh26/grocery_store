@@ -48,6 +48,10 @@ CREATE TABLE IF NOT EXISTS login_logs (
     user_agent TEXT,
     status VARCHAR(20) NOT NULL CHECK (status IN ('SUCCESS', 'FAILED')),
     failure_reason TEXT,
+    location_region VARCHAR(100),
+    location_city VARCHAR(100),
+    location_country VARCHAR(50),
+    location_details JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -328,6 +332,13 @@ SET
     selling_price = EXCLUDED.selling_price,
     cost_price = EXCLUDED.cost_price;
 
+-- Migration columns for login_logs geolocation
+ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_region VARCHAR(100);
+ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_city VARCHAR(100);
+ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_country VARCHAR(50);
+ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS location_details JSONB;
+
 -- ==============================================================================
 -- HOÀN TẤT KHỞI TẠO CƠ SỞ DỮ LIỆU NEON POSTGRESQL!
 -- ==============================================================================
+

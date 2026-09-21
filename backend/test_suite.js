@@ -56,13 +56,40 @@ async function runTests() {
   assert(adminLogin.status === 200 && adminLogin.data.data.user.role === 'SUPER_ADMIN', 'Super Admin login success');
   const adminToken = adminLogin.data.data.accessToken;
 
-  // Successful Cashier login
   const staffLogin = await request('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ identifier: 'nhanvien1', password: 'Staff@123456' })
   });
   assert(staffLogin.status === 200 && staffLogin.data.data.user.role === 'ADMIN', 'Cashier Admin login success');
   const staffToken = staffLogin.data.data.accessToken;
+
+  // TEST 2B: Client IP & Geolocation Detection
+  console.log('\n[2B] Testing IP Extraction & Geolocation in Login Logs...');
+  assert(!!adminLogin.data.data.clientLocation && adminLogin.data.data.clientLocation.ip === '127.0.0.1', 'Localhost login detects 127.0.0.1 with local subnet flag');
+
+  const proxyLogin = await request('/auth/login', {
+    method: 'POST',
+    headers: {
+      'X-Forwarded-For': '14.226.12.34, 10.0.0.1'
+    },
+    body: JSON.stringify({ identifier: 'admin', password: 'Admin@123456' })
+  });
+  assert(
+    proxyLogin.status === 200 &&
+    proxyLogin.data.data.clientLocation.ip === '14.226.12.34' &&
+    (proxyLogin.data.data.clientLocation.country === 'Viet Nam' || proxyLogin.data.data.clientLocation.country === 'Vietnam'),
+    'Login with forwarded IP extracts 14.226.12.34 and identifies Viet Nam'
+  );
+
+  const logsHistory = await request('/users/login-logs/history', {
+    headers: { Authorization: `Bearer ${adminToken}` }
+  });
+  const recentLogs = Array.isArray(logsHistory.data) ? logsHistory.data : (logsHistory.data?.data || []);
+  const matchingGeoLog = recentLogs.find(l => l.ip_address === '14.226.12.34');
+  assert(
+    !!matchingGeoLog && ('location_city' in matchingGeoLog) && ('location_country' in matchingGeoLog),
+    'Login logs history records IP geolocation columns (location_city, location_country)'
+  );
 
   // TEST 3: RBAC Authorization
   console.log('\n[3] Testing RBAC Privileges...');

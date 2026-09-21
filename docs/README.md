@@ -23,6 +23,7 @@ Chào mừng bạn đến với bộ tài liệu kỹ thuật chi tiết của h
 | 13 | [13_API_REFERENCE_TESTS.md](./13_API_REFERENCE_TESTS.md) | Danh mục toàn bộ REST API Endpoints, Quy ước mã lỗi HTTP và Bộ kiểm thử tự động 22 bài |
 | 14 | [14_MOBILE_RESPONSIVENESS_AND_SMART_CODE.md](./14_MOBILE_RESPONSIVENESS_AND_SMART_CODE.md) | Tối ưu hóa giao diện di động toàn diện & Thuật toán tự sinh mã sản phẩm kèm kiểm tra trùng lặp thời gian thực |
 | 15 | [15_AI_PRODUCT_CLASSIFICATION_AND_IMPORT.md](./15_AI_PRODUCT_CLASSIFICATION_AND_IMPORT.md) | Phân loại danh mục tự động bằng AI, Gợi ý đơn vị tính, Sinh mã SKU và Nhập hàng thông minh |
+| 16 | [16_LOGIN_IP_GEOLOCATION.md](./16_LOGIN_IP_GEOLOCATION.md) | Trích xuất IP khách, Định vị vị trí địa lý & khu vực truy cập (IP Geolocation), Lưu vết lịch sử đăng nhập |
 
 ---
 

@@ -205,35 +205,63 @@ export default function AdminsPage() {
                 <th>Tên Đăng Nhập</th>
                 <th>Người Dùng</th>
                 <th>Địa Chỉ IP</th>
+                <th>Khu Vực / Vị Trí</th>
                 <th>Trạng Thái</th>
                 <th>Ghi Chú</th>
               </tr>
             </thead>
             <tbody>
-              {loginLogs.map((log) => (
-                <tr key={log.id}>
-                  <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {formatDateTime(log.created_at)}
-                  </td>
-                  <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>
-                    {log.username}
-                  </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>
-                    {log.full_name || '-'}
-                  </td>
-                  <td style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {log.ip_address || '127.0.0.1'}
-                  </td>
-                  <td>
-                    <span className={`badge ${log.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`}>
-                      {log.status === 'SUCCESS' ? 'Thành công' : 'Thất bại'}
-                    </span>
-                  </td>
-                  <td style={{ fontSize: '12px', color: 'var(--danger)' }}>
-                    {log.failure_reason || '-'}
-                  </td>
-                </tr>
-              ))}
+              {loginLogs.map((log) => {
+                const isLocal = (!log.location_city && !log.location_region) ||
+                  log.ip_address === '127.0.0.1' ||
+                  log.ip_address === '::1' ||
+                  (log.ip_address && (log.ip_address.startsWith('192.168.') || log.ip_address.startsWith('10.')));
+                const locationDisplay = [log.location_city, log.location_region, log.location_country].filter(Boolean).join(', ');
+
+                return (
+                  <tr key={log.id}>
+                    <td style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      {formatDateTime(log.created_at)}
+                    </td>
+                    <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>
+                      {log.username}
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)' }}>
+                      {log.full_name || '-'}
+                    </td>
+                    <td style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--primary-light)', whiteSpace: 'nowrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <span style={{ fontSize: '13px' }}>💻</span>
+                        {log.ip_address || '127.0.0.1'}
+                      </span>
+                    </td>
+                    <td>
+                      {locationDisplay ? (
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                          <span style={{ fontSize: '14px' }}>📍</span>
+                          <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>{locationDisplay}</span>
+                        </div>
+                      ) : isLocal ? (
+                        <span className="badge badge-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
+                          🏠 Nội bộ (Localhost / LAN)
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          🌐 Ngoại mạng
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <span className={`badge ${log.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`}>
+                        {log.status === 'SUCCESS' ? 'Thành công' : 'Thất bại'}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: '12px', color: 'var(--danger)' }}>
+                      {log.failure_reason || '-'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
