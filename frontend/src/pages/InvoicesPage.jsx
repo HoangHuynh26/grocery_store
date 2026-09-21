@@ -11,7 +11,9 @@ import {
   RefreshCw,
   Sliders,
   History,
-  AlertCircle
+  AlertCircle,
+  Calendar,
+  X
 } from 'lucide-react';
 import Modal from '../components/common/Modal';
 
@@ -20,6 +22,9 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState([]);
   const [search, setSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [datePreset, setDatePreset] = useState('');
   const [loading, setLoading] = useState(true);
 
   // View Details Modal
@@ -32,12 +37,59 @@ export default function InvoicesPage() {
   const [adjustError, setAdjustError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Helper to apply date presets
+  const applyDatePreset = (preset) => {
+    setDatePreset(preset);
+    const now = new Date();
+    const toLocalDate = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    if (preset === 'today') {
+      const today = toLocalDate(now);
+      setStartDate(today);
+      setEndDate(today);
+    } else if (preset === 'yesterday') {
+      const yd = new Date(now); yd.setDate(yd.getDate() - 1);
+      const yesterday = toLocalDate(yd);
+      setStartDate(yesterday);
+      setEndDate(yesterday);
+    } else if (preset === 'week') {
+      const start = new Date(now); start.setDate(start.getDate() - start.getDay() + 1);
+      setStartDate(toLocalDate(start));
+      setEndDate(toLocalDate(now));
+    } else if (preset === 'month') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      setStartDate(toLocalDate(start));
+      setEndDate(toLocalDate(now));
+    } else if (preset === '7days') {
+      const start = new Date(now); start.setDate(start.getDate() - 6);
+      setStartDate(toLocalDate(start));
+      setEndDate(toLocalDate(now));
+    } else if (preset === '30days') {
+      const start = new Date(now); start.setDate(start.getDate() - 29);
+      setStartDate(toLocalDate(start));
+      setEndDate(toLocalDate(now));
+    }
+  };
+
+  const clearDateFilter = () => {
+    setStartDate('');
+    setEndDate('');
+    setDatePreset('');
+  };
+
   const loadInvoices = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (paymentMethod) params.append('paymentMethod', paymentMethod);
+      if (startDate) params.append('startDate', startDate + 'T00:00:00');
+      if (endDate) params.append('endDate', endDate + 'T23:59:59');
       params.append('limit', '50');
 
       const res = await api.get(`/invoices?${params.toString()}`);
@@ -47,7 +99,7 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, paymentMethod]);
+  }, [search, paymentMethod, startDate, endDate]);
 
   useEffect(() => {
     loadInvoices();
@@ -144,6 +196,71 @@ export default function InvoicesPage() {
             <option value="CASH">Tiền mặt</option>
             <option value="TRANSFER">Chuyển khoản</option>
           </select>
+        </div>
+
+        {/* Date Range Filter */}
+        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+            <Calendar size={14} color="var(--text-muted)" />
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Lọc thời gian:</span>
+            {[
+              { key: 'today', label: 'Hôm nay' },
+              { key: 'yesterday', label: 'Hôm qua' },
+              { key: '7days', label: '7 ngày' },
+              { key: 'week', label: 'Tuần này' },
+              { key: 'month', label: 'Tháng này' },
+              { key: '30days', label: '30 ngày' },
+            ].map(p => (
+              <button
+                key={p.key}
+                type="button"
+                className={`btn ${datePreset === p.key ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '20px', height: '28px' }}
+                onClick={() => applyDatePreset(p.key)}
+              >
+                {p.label}
+              </button>
+            ))}
+            {(startDate || endDate) && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '20px', height: '28px', color: 'var(--danger)' }}
+                onClick={clearDateFilter}
+                title="Xóa bộ lọc thời gian"
+              >
+                <X size={12} />
+                <span>Xóa lọc</span>
+              </button>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Từ:</label>
+              <input
+                type="date"
+                className="form-control"
+                style={{ width: 'auto', fontSize: '13px', padding: '6px 10px' }}
+                value={startDate}
+                onChange={(e) => { setStartDate(e.target.value); setDatePreset('custom'); }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Đến:</label>
+              <input
+                type="date"
+                className="form-control"
+                style={{ width: 'auto', fontSize: '13px', padding: '6px 10px' }}
+                value={endDate}
+                onChange={(e) => { setEndDate(e.target.value); setDatePreset('custom'); }}
+              />
+            </div>
+            {startDate && endDate && (
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                {startDate === endDate ? '1 ngày' : `${Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000) + 1} ngày`}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
