@@ -58,10 +58,10 @@ Tại `frontend/src/index.css`:
   --info: #2563eb;
   --info-bg: #eff6ff;
 
-  /* Kích thước Navbar được nâng cao */
+  /* Kích thước Navbar được nâng cao phong cách Apple Liquid Glass */
   --sidebar-width: 260px;
   --mobile-nav-height: 72px; /* Tăng từ 64px */
-  --header-height: 68px;     /* Tăng từ 64px */
+  --header-height: 76px;     /* Nâng lên 76px theo chuẩn Apple Liquid Glass thoáng đãng */
 
   /* Bóng đổ mờ cao cấp */
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
@@ -69,6 +69,18 @@ Tại `frontend/src/index.css`:
   --shadow-lg: 0 16px 36px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
 }
 ```
+
+### Chi tiết hoàn thiện Apple Liquid Glass trên Navbar:
+1. **Độ cao & Cân xứng**: Tăng chiều cao lên `76px` tạo khoảng trống đệm (breathing room) tự nhiên, đẳng cấp.
+2. **Kính lỏng phản quang (Specular Reflection)**:
+   - Nền đa tầng: `linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.74) 100%)`.
+   - Độ mờ khúc xạ cực cao: `backdrop-filter: blur(32px) saturate(210%)`.
+   - Vết vát ánh sáng bên trong: `box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 0 rgba(255, 255, 255, 0.4), 0 8px 28px -4px rgba(15, 23, 42, 0.04)`.
+3. **Các thành phần điều khiển dạng viên nang kính (Liquid Glass Capsules)**:
+   - Logo thương hiệu squircle 38x38px kèm gradient ngọc lục bảo và bóng đổ nổi bật.
+   - Nút Trợ Lý AI bo tròn pill viền phản quang với hiệu ứng nổi khi hover.
+   - Huy hiệu IP & Vị trí kết nối dạng viên nang kính với chấm xanh ngọc xung nhịp (apple-pulse-dot) thời gian thực.
+   - Khối thông tin người dùng & Đăng xuất bo tròn tinh tế theo phong cách macOS Control Center.
 
 ---
 

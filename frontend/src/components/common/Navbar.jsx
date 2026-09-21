@@ -9,42 +9,21 @@ export default function Navbar({ onOpenQrScanner }) {
   const { realtimeNotification, clearNotification } = useSocket();
 
   return (
-    <header style={{
-      height: 'var(--header-height)',
-      backgroundColor: 'rgba(255, 255, 255, 0.82)',
-      backdropFilter: 'blur(28px) saturate(190%)',
-      WebkitBackdropFilter: 'blur(28px) saturate(190%)',
-      borderBottom: '1px solid rgba(226, 232, 240, 0.85)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 20px',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-      boxShadow: '0 2px 16px rgba(15, 23, 42, 0.03)'
-    }} className="app-navbar">
+    <header className="app-navbar apple-liquid-navbar">
       {/* Brand & Title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
-          <div style={{
-            width: '34px',
-            height: '34px',
-            borderRadius: '9px',
-            backgroundColor: 'var(--primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            flexShrink: 0
-          }}>
-            <ShoppingBag size={18} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
+          <div className="apple-brand-icon">
+            <ShoppingBag size={20} strokeWidth={2.2} />
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '-0.02em', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-              GROCERY <span style={{ color: 'var(--primary)' }}>POS</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontWeight: 800, fontSize: '16px', letterSpacing: '-0.025em', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                GROCERY
+              </span>
+              <span className="apple-pos-pill">POS</span>
             </div>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1, display: 'none' }} className="show-desktop">
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.2, fontWeight: 500, display: 'none' }} className="show-desktop">
               Tạp Hóa Thông Minh
             </div>
           </div>
@@ -52,39 +31,26 @@ export default function Navbar({ onOpenQrScanner }) {
       </div>
 
       {/* Right controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {/* Quick Link to AI Assistant */}
         <Link
           to="/ai-assistant"
-          className="btn btn-secondary"
-          style={{ padding: '6px 10px', fontSize: '12px', flexShrink: 0 }}
+          className="apple-glass-button"
           title="Trợ Lý AI Doanh Nghiệp"
         >
-          <Bot size={15} color="var(--primary)" />
-          <span style={{ display: 'none' }} className="show-desktop">Trợ Lý AI</span>
+          <Bot size={16} color="var(--primary)" />
+          <span style={{ display: 'none', fontWeight: 600 }} className="show-desktop">Trợ Lý AI</span>
         </Link>
 
         {/* Realtime Alert Indicator */}
         {realtimeNotification && (
           <div
             onClick={clearNotification}
-            className="navbar-alert"
+            className="navbar-alert apple-alert-pill"
             style={{
-              padding: '4px 10px',
-              borderRadius: 'var(--radius-md)',
               backgroundColor: realtimeNotification.type === 'warning' ? 'var(--warning-bg)' : 'var(--primary-light)',
               border: `1px solid ${realtimeNotification.type === 'warning' ? 'var(--warning)' : 'var(--primary)'}`,
-              color: realtimeNotification.type === 'warning' ? 'var(--warning)' : 'var(--primary)',
-              fontSize: '11px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              maxWidth: '180px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+              color: realtimeNotification.type === 'warning' ? 'var(--warning)' : 'var(--primary)'
             }}
             title="Bấm để ẩn thông báo"
           >
@@ -96,50 +62,31 @@ export default function Navbar({ onOpenQrScanner }) {
         {/* Client IP & Location pill */}
         {clientLocation && (
           <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 10px',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'rgba(16, 185, 129, 0.08)',
-              border: '1px solid rgba(16, 185, 129, 0.22)',
-              fontSize: '11px',
-              color: 'var(--text-primary)',
-              cursor: 'default',
-              userSelect: 'none'
-            }}
+            className="apple-liquid-ip-pill"
             title={`Địa chỉ IP: ${clientLocation.ip}\nKhu vực: ${clientLocation.locationText || 'Nội bộ cửa hàng'}`}
           >
-            <span style={{ fontSize: '13px' }}>{clientLocation.flag || '📍'}</span>
-            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>
+            <span className="apple-pulse-dot" />
+            <span style={{ fontSize: '14px' }}>{clientLocation.flag || '📍'}</span>
+            <span style={{ fontWeight: 650, color: 'var(--primary)' }}>
               {clientLocation.city || (clientLocation.isLocal ? 'Nội bộ' : 'Online')}
             </span>
-            <span style={{ color: 'var(--text-muted)', fontSize: '10px' }} className="show-desktop">
+            <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 500 }} className="show-desktop">
               ({clientLocation.ip})
             </span>
           </div>
         )}
 
         {/* User Info & Role Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '6px', borderLeft: '1px solid var(--border-color)' }}>
-          <div style={{
-            width: '30px',
-            height: '30px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--bg-card-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--text-secondary)',
-            flexShrink: 0
-          }}>
-            <User size={15} />
+        <div className="apple-liquid-user-pill">
+          <div className="apple-user-avatar">
+            <User size={16} strokeWidth={2.2} />
           </div>
           <div style={{ display: 'none' }} className="show-desktop">
-            <div style={{ fontSize: '13px', fontWeight: 600 }}>{user?.fullName || user?.username}</div>
-            <div style={{ fontSize: '11px', color: isSuperAdmin ? 'var(--primary)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '2px' }}>
-              {isSuperAdmin && <ShieldCheck size={12} />}
+            <div style={{ fontSize: '13px', fontWeight: 650, lineHeight: 1.2, color: 'var(--text-primary)' }}>
+              {user?.fullName || user?.username}
+            </div>
+            <div style={{ fontSize: '11px', color: isSuperAdmin ? 'var(--primary)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
+              {isSuperAdmin && <ShieldCheck size={12} strokeWidth={2.5} />}
               {user?.role}
             </div>
           </div>
@@ -148,21 +95,215 @@ export default function Navbar({ onOpenQrScanner }) {
         {/* Logout Button */}
         <button
           onClick={logout}
-          className="btn btn-secondary btn-icon"
+          className="apple-liquid-logout-btn"
           title="Đăng xuất"
-          style={{ width: '32px', height: '32px', flexShrink: 0 }}
         >
-          <LogOut size={15} />
+          <LogOut size={16} strokeWidth={2.2} />
         </button>
       </div>
 
       <style>{`
+        .apple-liquid-navbar {
+          height: var(--header-height);
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.74) 100%);
+          backdrop-filter: blur(32px) saturate(210%);
+          -webkit-backdrop-filter: blur(32px) saturate(210%);
+          border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+          box-shadow: 
+            inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
+            inset 0 -1px 0 0 rgba(255, 255, 255, 0.4),
+            0 8px 28px -4px rgba(15, 23, 42, 0.04),
+            0 1px 3px 0 rgba(15, 23, 42, 0.02);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 24px;
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .apple-brand-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 11px;
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          flex-shrink: 0;
+          box-shadow: 0 6px 16px -2px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .apple-brand-icon:hover {
+          transform: scale(1.04);
+          box-shadow: 0 8px 20px -2px rgba(16, 185, 129, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        }
+
+        .apple-pos-pill {
+          background: rgba(16, 185, 129, 0.12);
+          color: #059669;
+          padding: 2px 8px;
+          border-radius: 6px;
+          font-weight: 800;
+          font-size: 12px;
+          letter-spacing: 0.02em;
+          border: 1px solid rgba(16, 185, 129, 0.25);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .apple-glass-button {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          padding: 7px 14px;
+          font-size: 13px;
+          color: var(--text-primary);
+          text-decoration: none;
+          border-radius: var(--radius-full);
+          background: rgba(255, 255, 255, 0.75);
+          backdrop-filter: blur(16px) saturate(180%);
+          -webkit-backdrop-filter: blur(16px) saturate(180%);
+          border: 1px solid rgba(226, 232, 240, 0.85);
+          box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), 0 2px 8px rgba(15, 23, 42, 0.03);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          flex-shrink: 0;
+        }
+        .apple-glass-button:hover {
+          background: rgba(255, 255, 255, 0.95);
+          border-color: rgba(16, 185, 129, 0.4);
+          color: var(--primary);
+          box-shadow: inset 0 1px 0 0 #fff, 0 4px 14px rgba(16, 185, 129, 0.15);
+          transform: translateY(-1px);
+        }
+
+        .apple-liquid-ip-pill {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          padding: 6px 13px;
+          border-radius: var(--radius-full);
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+          border: 1px solid rgba(16, 185, 129, 0.28);
+          box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9), 0 2px 8px rgba(16, 185, 129, 0.06);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          font-size: 12px;
+          color: var(--text-primary);
+          user-select: none;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .apple-liquid-ip-pill:hover {
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(5, 150, 105, 0.08) 100%);
+          border-color: rgba(16, 185, 129, 0.45);
+          box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), 0 4px 14px rgba(16, 185, 129, 0.12);
+          transform: translateY(-1px);
+        }
+
+        .apple-pulse-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background-color: #10b981;
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+          animation: applePulse 2s infinite;
+        }
+        @keyframes applePulse {
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+          70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .apple-liquid-user-pill {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 5px 14px 5px 6px;
+          border-radius: var(--radius-full);
+          background: rgba(255, 255, 255, 0.75);
+          backdrop-filter: blur(16px) saturate(180%);
+          -webkit-backdrop-filter: blur(16px) saturate(180%);
+          border: 1px solid rgba(226, 232, 240, 0.85);
+          box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), 0 2px 8px rgba(15, 23, 42, 0.03);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .apple-liquid-user-pill:hover {
+          background: rgba(255, 255, 255, 0.92);
+          border-color: rgba(203, 213, 225, 0.95);
+          box-shadow: inset 0 1px 0 0 #fff, 0 4px 14px rgba(15, 23, 42, 0.06);
+        }
+
+        .apple-user-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+          border: 1px solid rgba(255, 255, 255, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--text-secondary);
+          flex-shrink: 0;
+          box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+        }
+
+        .apple-liquid-logout-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.75);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(226, 232, 240, 0.85);
+          box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), 0 2px 6px rgba(15, 23, 42, 0.03);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          flex-shrink: 0;
+        }
+        .apple-liquid-logout-btn:hover {
+          background: rgba(254, 242, 242, 0.9);
+          border-color: rgba(252, 165, 165, 0.9);
+          color: var(--danger);
+          transform: translateY(-1px);
+          box-shadow: inset 0 1px 0 0 #fff, 0 4px 14px rgba(220, 38, 38, 0.15);
+        }
+
+        .apple-alert-pill {
+          padding: 6px 12px;
+          border-radius: var(--radius-full);
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          max-width: 220px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 8px rgba(15, 23, 42, 0.04);
+          transition: all 0.2s ease;
+        }
+        .apple-alert-pill:hover {
+          transform: translateY(-1px);
+          box-shadow: inset 0 1px 0 #fff, 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+
         @media (min-width: 768px) {
           .show-desktop { display: block !important; }
         }
         @media (max-width: 640px) {
-          .app-navbar { padding: 0 10px !important; }
-          .navbar-alert { max-width: 90px !important; }
+          .apple-liquid-navbar { padding: 0 12px !important; }
+          .apple-alert-pill { max-width: 100px !important; }
+          .apple-liquid-user-pill { padding: 5px !important; }
+          .apple-liquid-ip-pill { padding: 5px 9px !important; }
         }
       `}</style>
     </header>
