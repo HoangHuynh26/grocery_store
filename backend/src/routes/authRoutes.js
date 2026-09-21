@@ -4,6 +4,7 @@ const AuthController = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimiter');
 
+router.get('/client-ip', AuthController.getClientIp);
 router.post('/login', loginLimiter, AuthController.login);
 router.post('/refresh', AuthController.refresh);
 router.post('/logout', authenticateToken, AuthController.logout);

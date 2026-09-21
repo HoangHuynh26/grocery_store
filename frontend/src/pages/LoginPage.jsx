@@ -1,15 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ShoppingBag, Lock, User, ArrowRight, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, Lock, User, ArrowRight, ShieldCheck, MapPin, Globe, CheckCircle } from 'lucide-react';
+import api from '../services/api';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [clientIpInfo, setClientIpInfo] = useState(null);
+  const [loginSuccessLocation, setLoginSuccessLocation] = useState(null);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Detect client IP and location on load
+  useEffect(() => {
+    let mounted = true;
+    api.get('/auth/client-ip')
+      .then(res => {
+        const info = res.data || res;
+        if (mounted && info && info.ip) {
+          setClientIpInfo(info);
+        }
+      })
+      .catch(() => {
+        // Fallback for offline/local
+        if (mounted) {
+          setClientIpInfo({
+            ip: '127.0.0.1',
+            locationText: 'Nội bộ cửa hàng (Localhost / LAN)',
+            city: 'Cửa hàng (LAN)',
+            country: 'Việt Nam',
+            flag: '🏠',
+            isLocal: true
+          });
+        }
+      });
+    return () => { mounted = false; };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,11 +50,15 @@ export default function LoginPage() {
     try {
       setLoading(true);
       setError('');
-      await login(identifier, password);
-      navigate('/pos');
+      const loginResult = await login(identifier, password);
+      if (loginResult?.clientLocation) {
+        setLoginSuccessLocation(loginResult.clientLocation);
+      }
+      setTimeout(() => {
+        navigate('/pos');
+      }, 500);
     } catch (err) {
       setError(err.message || 'Đăng nhập không thành công.');
-    } finally {
       setLoading(false);
     }
   };
@@ -52,7 +85,7 @@ export default function LoginPage() {
     }}>
       <div className="card" style={{ maxWidth: '440px', width: '100%', padding: '32px 24px' }}>
         {/* Brand Header */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div style={{
             width: '56px',
             height: '56px',
@@ -72,6 +105,54 @@ export default function LoginPage() {
             Hệ thống quản lý bán hàng & kho tạp hóa đa người dùng
           </p>
         </div>
+
+        {/* IP & Khu vực kết nối */}
+        {clientIpInfo && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '8px 14px',
+            backgroundColor: 'var(--bg-main)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-full)',
+            fontSize: '12px',
+            color: 'var(--text-secondary)',
+            marginBottom: '20px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+          }}>
+            <span style={{ fontSize: '14px' }}>{clientIpInfo.flag || '📍'}</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>IP: {clientIpInfo.ip}</span>
+            <span style={{ color: 'var(--border-color)' }}>|</span>
+            <span style={{ color: 'var(--primary)', fontWeight: 600 }}>
+              {clientIpInfo.locationText || clientIpInfo.city || 'Khu vực nội bộ'}
+            </span>
+          </div>
+        )}
+
+        {loginSuccessLocation && (
+          <div style={{
+            padding: '12px 16px',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid var(--primary)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--text-primary)',
+            fontSize: '13px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <CheckCircle size={20} color="var(--primary)" />
+            <div>
+              <div style={{ fontWeight: 600, color: 'var(--primary)' }}>Đăng nhập thành công!</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                IP: <strong>{loginSuccessLocation.ip}</strong> ({loginSuccessLocation.locationText || loginSuccessLocation.city})
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div style={{

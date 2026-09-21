@@ -5,7 +5,7 @@ import { LogOut, User, Bell, ShoppingBag, Bot, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom';
 
 export default function Navbar({ onOpenQrScanner }) {
-  const { user, logout, isSuperAdmin } = useAuth();
+  const { user, logout, isSuperAdmin, clientLocation } = useAuth();
   const { realtimeNotification, clearNotification } = useSocket();
 
   return (
@@ -90,6 +90,34 @@ export default function Navbar({ onOpenQrScanner }) {
           >
             <Bell size={13} style={{ flexShrink: 0 }} />
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{realtimeNotification.message}</span>
+          </div>
+        )}
+
+        {/* Client IP & Location pill */}
+        {clientLocation && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.22)',
+              fontSize: '11px',
+              color: 'var(--text-primary)',
+              cursor: 'default',
+              userSelect: 'none'
+            }}
+            title={`Địa chỉ IP: ${clientLocation.ip}\nKhu vực: ${clientLocation.locationText || 'Nội bộ cửa hàng'}`}
+          >
+            <span style={{ fontSize: '13px' }}>{clientLocation.flag || '📍'}</span>
+            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>
+              {clientLocation.city || (clientLocation.isLocal ? 'Nội bộ' : 'Online')}
+            </span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '10px' }} className="show-desktop">
+              ({clientLocation.ip})
+            </span>
           </div>
         )}
 

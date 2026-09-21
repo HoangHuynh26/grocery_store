@@ -12,6 +12,14 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
+  const [clientLocation, setClientLocation] = useState(() => {
+    try {
+      const stored = localStorage.getItem('grocery_client_location');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,11 +37,17 @@ export function AuthProvider({ children }) {
           setUser(res.data.user);
           localStorage.setItem('grocery_user', JSON.stringify(res.data.user));
         }
+        if (res.data?.clientLocation) {
+          setClientLocation(res.data.clientLocation);
+          localStorage.setItem('grocery_client_location', JSON.stringify(res.data.clientLocation));
+        }
       } catch (err) {
         console.warn('Session check failed:', err.message);
         setUser(null);
+        setClientLocation(null);
         localStorage.removeItem('grocery_access_token');
         localStorage.removeItem('grocery_user');
+        localStorage.removeItem('grocery_client_location');
       } finally {
         setLoading(false);
       }
@@ -44,11 +58,15 @@ export function AuthProvider({ children }) {
 
   const login = async (identifier, password) => {
     const res = await api.post('/auth/login', { identifier, password });
-    const { user: authUser, accessToken } = res.data;
+    const { user: authUser, accessToken, clientLocation: loc } = res.data;
     localStorage.setItem('grocery_access_token', accessToken);
     localStorage.setItem('grocery_user', JSON.stringify(authUser));
     setUser(authUser);
-    return authUser;
+    if (loc) {
+      localStorage.setItem('grocery_client_location', JSON.stringify(loc));
+      setClientLocation(loc);
+    }
+    return { user: authUser, clientLocation: loc };
   };
 
   const logout = async () => {
@@ -59,13 +77,16 @@ export function AuthProvider({ children }) {
     } finally {
       localStorage.removeItem('grocery_access_token');
       localStorage.removeItem('grocery_user');
+      localStorage.removeItem('grocery_client_location');
       setUser(null);
+      setClientLocation(null);
       window.location.href = '/login';
     }
   };
 
   const value = {
     user,
+    clientLocation,
     loading,
     isAuthenticated: !!user,
     isSuperAdmin: user?.role === 'SUPER_ADMIN',

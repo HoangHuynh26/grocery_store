@@ -205,12 +205,46 @@ class AuthController {
     }
   }
 
-  static async getMe(req, res, next) {
+  static async getClientIp(req, res, next) {
     try {
+      const clientIp = extractClientIp(req);
+      const geoInfo = await lookupIpLocation(clientIp);
       return res.status(200).json({
         success: true,
         data: {
-          user: req.user
+          ip: clientIp,
+          region: geoInfo.region,
+          city: geoInfo.city,
+          country: geoInfo.country,
+          locationText: geoInfo.locationText,
+          flag: geoInfo.flag,
+          isLocal: geoInfo.isLocal,
+          details: geoInfo.details
+        }
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async getMe(req, res, next) {
+    try {
+      const clientIp = extractClientIp(req);
+      const geoInfo = await lookupIpLocation(clientIp);
+      return res.status(200).json({
+        success: true,
+        data: {
+          user: req.user,
+          clientLocation: {
+            ip: clientIp,
+            region: geoInfo.region,
+            city: geoInfo.city,
+            country: geoInfo.country,
+            locationText: geoInfo.locationText,
+            flag: geoInfo.flag,
+            isLocal: geoInfo.isLocal,
+            details: geoInfo.details
+          }
         }
       });
     } catch (err) {

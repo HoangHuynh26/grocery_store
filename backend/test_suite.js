@@ -91,6 +91,24 @@ async function runTests() {
     'Login logs history records IP geolocation columns (location_city, location_country)'
   );
 
+  // Direct client-ip endpoint test
+  const clientIpRes = await request('/auth/client-ip', {
+    headers: { 'X-Forwarded-For': '1.55.12.34' }
+  });
+  assert(
+    clientIpRes.status === 200 && clientIpRes.data.success && clientIpRes.data.data.ip === '1.55.12.34' && !!clientIpRes.data.data.country,
+    'Endpoint GET /api/auth/client-ip detects forwarded IP and resolves location'
+  );
+
+  // Me endpoint clientLocation test
+  const meRes = await request('/auth/me', {
+    headers: { Authorization: `Bearer ${adminToken}`, 'X-Forwarded-For': '1.55.12.34' }
+  });
+  assert(
+    meRes.status === 200 && meRes.data.success && meRes.data.data.clientLocation?.ip === '1.55.12.34',
+    'Endpoint GET /api/auth/me provides real-time clientLocation context'
+  );
+
   // TEST 3: RBAC Authorization
   console.log('\n[3] Testing RBAC Privileges...');
   // Cashier attempting to list users (restricted to SUPER_ADMIN)
