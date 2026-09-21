@@ -124,8 +124,8 @@ export default function PosPage() {
       <div className={`pos-catalog-scroll ${totalUnits > 0 ? 'has-cart' : ''}`}>
         {/* Top Controls: Search Bar, Category Popdown, and QR Scanner Trigger */}
         <div className="pos-controls-container">
-          <div className="pos-controls-top-row">
-            <div className="pos-search-wrapper">
+          <div className="pos-controls-top-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+            <div className="pos-search-wrapper" style={{ position: 'relative', flex: 1, minWidth: '160px' }}>
               <input
                 type="text"
                 className="form-control"
@@ -141,7 +141,7 @@ export default function PosPage() {
               type="button"
               className="btn btn-primary"
               onClick={() => setIsScannerOpen(true)}
-              style={{ height: '42px', padding: '0 14px', flexShrink: 0, gap: '6px' }}
+              style={{ height: '42px', padding: '0 16px', flexShrink: 0, gap: '6px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
               title="Quét QR Camera"
             >
               <QrCode size={18} />
@@ -276,7 +276,7 @@ export default function PosPage() {
                       fontWeight: 600,
                       backgroundColor: isOutOfStock
                         ? 'var(--danger-bg)'
-                        : (isLowStock ? 'var(--warning-bg)' : 'rgba(255,255,255,0.06)'),
+                        : (isLowStock ? 'var(--warning-bg)' : 'var(--bg-card-secondary)'),
                       color: isOutOfStock
                         ? 'var(--danger)'
                         : (isLowStock ? 'var(--warning)' : 'var(--text-secondary)')
@@ -350,7 +350,7 @@ export default function PosPage() {
                   </div>
 
                   {/* Price & Add Action */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
                     <div style={{ fontWeight: 800, fontSize: '15px', color: 'var(--primary)' }}>
                       {formatCurrency(p.selling_price)}
                     </div>

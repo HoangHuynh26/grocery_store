@@ -358,19 +358,28 @@ h1, h2, h3, h4, h5 {
 /* POS Controls Bar with Category Popdown (Desktop & Mobile) */
 .pos-controls-container {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 14px;
   align-items: center;
+  width: 100%;
+}
+.pos-controls-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
 .pos-search-wrapper {
   position: relative;
   flex: 1;
-  min-width: 180px;
+  min-width: 160px;
 }
 .pos-category-select-wrapper {
   position: relative;
-  min-width: 200px;
-  max-width: 280px;
+  min-width: 230px;
+  max-width: 320px;
+  flex-shrink: 0;
 }
 @media (max-width: 768px) {
   .pos-controls-container {
@@ -380,6 +389,7 @@ h1, h2, h3, h4, h5 {
   }
   .pos-controls-top-row {
     display: flex;
+    align-items: center;
     gap: 8px;
     width: 100%;
   }
