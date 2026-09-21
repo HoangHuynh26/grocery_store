@@ -26,6 +26,7 @@ Chào mừng bạn đến với bộ tài liệu kỹ thuật chi tiết của h
 | 16 | [16_LOGIN_IP_GEOLOCATION.md](./16_LOGIN_IP_GEOLOCATION.md) | Trích xuất IP khách, Định vị vị trí địa lý & khu vực truy cập (IP Geolocation), Lưu vết lịch sử đăng nhập |
 | 17 | [17_LIGHT_THEME_LIQUID_GLASS_TOGGLES.md](./17_LIGHT_THEME_LIQUID_GLASS_TOGGLES.md) | Giao diện sáng (Light Theme), Thanh điều hướng Apple Liquid Glass & Nút công tắc gạt Toggle Switch |
 | 18 | [18_POS_TOP_SELLING_PRODUCTS.md](./18_POS_TOP_SELLING_PRODUCTS.md) | Mục Top 10 sản phẩm bán chạy nhất trên màn hình POS, Thao tác 1-Click thêm nhanh & Đồng bộ realtime |
+| 19 | [19_MOBILE_POS_CLIPPING_LAYOUT_FIX.md](./19_MOBILE_POS_CLIPPING_LAYOUT_FIX.md) | Khắc phục triệt để lỗi tràn chiều ngang & mất góc trái màn hình POS di động |
 
 ---
 
