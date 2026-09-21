@@ -2,23 +2,25 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import { LogOut, User, Bell, ShoppingBag, Bot, ShieldCheck } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Navbar({ onOpenQrScanner }) {
   const { user, logout, isSuperAdmin, clientLocation } = useAuth();
   const { realtimeNotification, clearNotification } = useSocket();
+  const location = useLocation();
+  const isAiPage = location.pathname === '/ai-assistant';
 
   return (
     <header className="app-navbar apple-liquid-navbar">
       {/* Brand & Title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+        <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
           <div className="apple-brand-icon">
-            <ShoppingBag size={20} strokeWidth={2.2} />
+            <ShoppingBag size={18} strokeWidth={2.2} />
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span style={{ fontWeight: 800, fontSize: '16px', letterSpacing: '-0.025em', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+              <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '-0.025em', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                 GROCERY
               </span>
               <span className="apple-pos-pill">POS</span>
@@ -31,16 +33,18 @@ export default function Navbar({ onOpenQrScanner }) {
       </div>
 
       {/* Right controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div className="navbar-right-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         {/* Quick Link to AI Assistant */}
-        <Link
-          to="/ai-assistant"
-          className="apple-glass-button"
-          title="Trợ Lý AI Doanh Nghiệp"
-        >
-          <Bot size={16} color="var(--primary)" />
-          <span style={{ display: 'none', fontWeight: 600 }} className="show-desktop">Trợ Lý AI</span>
-        </Link>
+        {!isAiPage && (
+          <Link
+            to="/ai-assistant"
+            className="apple-glass-button"
+            title="Trợ Lý AI Doanh Nghiệp"
+          >
+            <Bot size={15} color="var(--primary)" />
+            <span style={{ display: 'none', fontWeight: 600 }} className="show-desktop">Trợ Lý AI</span>
+          </Link>
+        )}
 
         {/* Realtime Alert Indicator */}
         {realtimeNotification && (
@@ -52,10 +56,13 @@ export default function Navbar({ onOpenQrScanner }) {
               border: `1px solid ${realtimeNotification.type === 'warning' ? 'var(--warning)' : 'var(--primary)'}`,
               color: realtimeNotification.type === 'warning' ? 'var(--warning)' : 'var(--primary)'
             }}
-            title="Bấm để ẩn thông báo"
+            title={`Thông báo: ${realtimeNotification.message}\n(Bấm để đóng)`}
           >
-            <Bell size={13} style={{ flexShrink: 0 }} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{realtimeNotification.message}</span>
+            <Bell size={13} className="alert-bell-icon" style={{ flexShrink: 0 }} />
+            <span className="show-desktop" style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+              {realtimeNotification.message}
+            </span>
+            <span className="mobile-alert-dot hide-desktop" />
           </div>
         )}
 
@@ -66,9 +73,12 @@ export default function Navbar({ onOpenQrScanner }) {
             title={`Địa chỉ IP: ${clientLocation.ip}\nKhu vực: ${clientLocation.locationText || 'Nội bộ cửa hàng'}`}
           >
             <span className="apple-pulse-dot" />
-            <span style={{ fontSize: '14px' }}>{clientLocation.flag || '📍'}</span>
-            <span style={{ fontWeight: 650, color: 'var(--primary)' }}>
+            <span style={{ fontSize: '13px' }}>{clientLocation.flag || (clientLocation.isLocal ? '🏠' : '📍')}</span>
+            <span className="show-desktop" style={{ fontWeight: 650, color: 'var(--primary)' }}>
               {clientLocation.city || (clientLocation.isLocal ? 'Nội bộ' : 'Online')}
+            </span>
+            <span className="hide-desktop" style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '11px' }}>
+              {clientLocation.isLocal ? 'LAN' : 'Net'}
             </span>
             <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 500 }} className="show-desktop">
               ({clientLocation.ip})
@@ -77,9 +87,12 @@ export default function Navbar({ onOpenQrScanner }) {
         )}
 
         {/* User Info & Role Badge */}
-        <div className="apple-liquid-user-pill">
+        <div 
+          className="apple-liquid-user-pill"
+          title={`${user?.fullName || user?.username} (${user?.role})`}
+        >
           <div className="apple-user-avatar">
-            <User size={16} strokeWidth={2.2} />
+            <User size={15} strokeWidth={2.2} />
           </div>
           <div style={{ display: 'none' }} className="show-desktop">
             <div style={{ fontSize: '13px', fontWeight: 650, lineHeight: 1.2, color: 'var(--text-primary)' }}>
@@ -98,7 +111,7 @@ export default function Navbar({ onOpenQrScanner }) {
           className="apple-liquid-logout-btn"
           title="Đăng xuất"
         >
-          <LogOut size={16} strokeWidth={2.2} />
+          <LogOut size={15} strokeWidth={2.2} />
         </button>
       </div>
 
@@ -296,14 +309,65 @@ export default function Navbar({ onOpenQrScanner }) {
           box-shadow: inset 0 1px 0 #fff, 0 4px 12px rgba(15, 23, 42, 0.08);
         }
 
+        .mobile-alert-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background-color: var(--warning);
+          box-shadow: 0 0 6px var(--warning);
+          animation: applePulse 1.5s infinite;
+        }
+
         @media (min-width: 768px) {
           .show-desktop { display: block !important; }
+          .hide-desktop { display: none !important; }
+        }
+        @media (max-width: 767px) {
+          .show-desktop { display: none !important; }
+          .hide-desktop { display: inline-flex !important; }
         }
         @media (max-width: 640px) {
-          .apple-liquid-navbar { padding: 0 12px !important; }
-          .apple-alert-pill { max-width: 100px !important; }
-          .apple-liquid-user-pill { padding: 5px !important; }
-          .apple-liquid-ip-pill { padding: 5px 9px !important; }
+          .apple-liquid-navbar { 
+            padding: 0 10px !important; 
+            height: var(--header-height) !important;
+            overflow-x: hidden !important;
+          }
+          .navbar-right-controls {
+            gap: 6px !important;
+          }
+          .apple-alert-pill { 
+            padding: 5px 8px !important; 
+            max-width: 36px !important;
+            justify-content: center;
+          }
+          .apple-liquid-user-pill { 
+            padding: 2px !important; 
+            border: 1px solid rgba(226, 232, 240, 0.7);
+            background: rgba(255, 255, 255, 0.85);
+          }
+          .apple-user-avatar {
+            width: 30px !important;
+            height: 30px !important;
+          }
+          .apple-liquid-ip-pill { 
+            padding: 4px 8px !important; 
+            gap: 4px !important;
+          }
+          .apple-liquid-logout-btn {
+            width: 30px !important;
+            height: 30px !important;
+          }
+          .apple-glass-button {
+            padding: 6px !important;
+            width: 30px !important;
+            height: 30px !important;
+            justify-content: center;
+          }
+          .apple-brand-icon {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 9px !important;
+          }
         }
       `}</style>
     </header>

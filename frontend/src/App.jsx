@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { CartProvider } from './contexts/CartContext';
@@ -23,6 +23,8 @@ import AdminsPage from './pages/AdminsPage';
 // Protected Route Wrapper
 function ProtectedLayout() {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+  const isChatPage = location.pathname === '/ai-assistant';
 
   if (loading) {
     return (
@@ -49,7 +51,7 @@ function ProtectedLayout() {
         <Navbar />
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <Sidebar />
-          <main className="main-content">
+          <main className={`main-content ${isChatPage ? 'main-content-chat' : ''}`}>
             <Outlet />
           </main>
         </div>

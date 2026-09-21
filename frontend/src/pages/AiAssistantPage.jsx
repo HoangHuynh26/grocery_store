@@ -194,6 +194,9 @@ export default function AiAssistantPage() {
     const userMsg = { id: String(Date.now()), role: 'user', content: text };
     setMessages((prev) => [...prev, userMsg]);
     setInputValue('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     setActiveContext(null);
     setIsAttachOpen(false);
     setLoading(true);
@@ -229,6 +232,14 @@ export default function AiAssistantPage() {
     }
   };
 
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  };
+
   const handleCopy = (id, text) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -236,70 +247,32 @@ export default function AiAssistantPage() {
   };
 
   return (
-    <div
-      className="page-container ai-chat-container"
-      style={{
-        maxWidth: '920px',
-        margin: '0 auto',
-        height: 'calc(100vh - var(--header-height) - var(--mobile-nav-height) - env(safe-area-inset-bottom, 0px) - 24px)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }}
-    >
+    <div className="page-container ai-chat-container">
       {/* Top Header Card (Apple Liquid Glass) */}
-      <div
-        className="card"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 18px',
-          borderRadius: 'var(--radius-lg)',
-          backdropFilter: 'blur(16px)',
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, var(--primary), #3b82f6)',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(37,99,235,0.25)'
-            }}
-          >
-            <Bot size={22} />
+      <div className="card ai-chat-header-card">
+        <div className="ai-header-brand-wrap">
+          <div className="ai-header-bot-avatar">
+            <Bot size={20} />
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '17px', margin: 0, fontWeight: 700 }}>Trợ Lý Kinh Doanh AI</h1>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  padding: '2px 8px',
-                  borderRadius: '9999px',
-                  backgroundColor: '#dcfce7',
-                  color: '#15803d'
-                }}
-              >
-                ● Tự học liên tục
+          <div className="ai-header-info">
+            <div className="ai-header-title-line">
+              <h1 className="ai-header-heading">
+                <span className="show-desktop-inline">Trợ Lý Kinh Doanh AI</span>
+                <span className="hide-desktop">Trợ Lý AI</span>
+              </h1>
+              <span className="ai-header-live-badge">
+                <span className="ai-pulse-dot-green" />
+                <span className="show-desktop-inline">Tự học liên tục</span>
+                <span className="hide-desktop">Tự học</span>
               </span>
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            <div className="ai-header-subtext show-desktop">
               Tự train mỗi ngày (12:00 AM) • Tự học mỗi khi thêm SP mới
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="ai-header-actions-wrap">
           {/* AI Self-Learning Control Center Button */}
           <button
             type="button"
@@ -307,72 +280,34 @@ export default function AiAssistantPage() {
               setIsLearningModalOpen(true);
               fetchLearningData();
             }}
-            className="btn btn-secondary"
-            style={{
-              padding: '7px 14px',
-              fontSize: '12px',
-              borderRadius: '9999px',
-              gap: '6px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              backgroundColor: 'rgba(37, 99, 235, 0.08)',
-              color: 'var(--primary)',
-              borderColor: 'rgba(37, 99, 235, 0.25)',
-              fontWeight: 600
-            }}
-            title="Mở Bảng Điều Khiển Mô Hình AI Tự Học"
+            className="ai-header-glass-btn ai-learn-btn"
+            title={`Mô hình AI Tự Học: ${learningStats?.learnedVocabularyTerms || '267+'} tri thức`}
           >
-            <Brain size={14} />
-            <span>AI Tự Học ({learningStats?.learnedVocabularyTerms || '215+'} tri thức)</span>
+            <Brain size={14} className="ai-brain-icon" />
+            <span className="show-desktop-inline">AI Tự Học ({learningStats?.learnedVocabularyTerms || '215+'} tri thức)</span>
+            <span className="hide-desktop ai-learn-pill-count">{learningStats?.learnedVocabularyTerms || '267'}</span>
           </button>
 
+          {/* New Chat Button */}
           <button
+            type="button"
             onClick={() => {
               setMessages([messages[0]]);
               setSessionId(null);
               setActiveContext(null);
             }}
-            className="btn btn-secondary"
-            style={{
-              padding: '7px 14px',
-              fontSize: '12px',
-              borderRadius: '9999px',
-              gap: '6px'
-            }}
+            className="ai-header-glass-btn ai-new-chat-btn"
             title="Bắt đầu đoạn chat mới"
           >
             <RefreshCw size={13} />
-            <span>Đoạn chat mới</span>
+            <span className="show-desktop-inline">Đoạn chat mới</span>
           </button>
         </div>
       </div>
 
       {/* Chat Messages Body */}
-      <div
-        className="card"
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          padding: 0,
-          borderRadius: 'var(--radius-xl)',
-          backgroundColor: 'rgba(255, 255, 255, 0.75)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(0,0,0,0.06)',
-          boxShadow: '0 8px 30px rgba(0,0,0,0.04)'
-        }}
-      >
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '18px'
-          }}
-        >
+      <div className="card ai-chat-body-card">
+        <div className="ai-messages-scroll-area">
           {messages.map((msg) => {
             const isBot = msg.role === 'assistant';
             const isCopied = copiedId === msg.id;
@@ -380,108 +315,40 @@ export default function AiAssistantPage() {
             return (
               <div
                 key={msg.id}
-                style={{
-                  display: 'flex',
-                  gap: '12px',
-                  alignItems: 'flex-start',
-                  alignSelf: isBot ? 'flex-start' : 'flex-end',
-                  maxWidth: isBot ? '88%' : '78%'
-                }}
+                className={`ai-message-row ${isBot ? 'bot-row' : 'user-row'}`}
               >
                 {isBot && (
-                  <div
-                    style={{
-                      width: '34px',
-                      height: '34px',
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, var(--primary), #2563eb)',
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      boxShadow: '0 2px 8px rgba(37,99,235,0.2)'
-                    }}
-                  >
-                    <Bot size={17} />
+                  <div className="ai-bot-avatar">
+                    <Bot size={16} />
                   </div>
                 )}
 
-                <div
-                  style={{
-                    backgroundColor: isBot ? '#ffffff' : '#0f172a',
-                    color: isBot ? 'var(--text-primary)' : '#ffffff',
-                    padding: '14px 18px',
-                    borderRadius: '20px',
-                    borderTopLeftRadius: isBot ? '4px' : '20px',
-                    borderTopRightRadius: isBot ? '20px' : '4px',
-                    fontSize: '14px',
-                    lineHeight: 1.65,
-                    whiteSpace: 'pre-wrap',
-                    boxShadow: isBot
-                      ? '0 4px 16px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)'
-                      : '0 4px 16px rgba(15,23,42,0.18)',
-                    border: isBot ? '1px solid rgba(0,0,0,0.05)' : 'none',
-                    position: 'relative'
-                  }}
-                >
+                <div className={`ai-message-bubble ${isBot ? 'bot-bubble' : 'user-bubble'}`}>
                   {cleanAiText(msg.content)}
 
                   {/* Metadata and tool information */}
                   {msg.toolUsed && (
-                    <div
-                      style={{
-                        marginTop: '10px',
-                        paddingTop: '8px',
-                        borderTop: '1px solid rgba(0,0,0,0.06)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontSize: '11px',
-                        color: 'var(--text-muted)'
-                      }}
-                    >
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        ⚡ Nguồn dữ liệu: <code style={{ backgroundColor: '#f1f5f9', padding: '1px 6px', borderRadius: '4px' }}>{msg.toolUsed}</code>
+                    <div className="ai-tool-meta-bar">
+                      <span className="ai-tool-source-tag">
+                        ⚡ Nguồn: <code>{msg.toolUsed}</code>
                       </span>
 
                       <button
                         type="button"
                         onClick={() => handleCopy(msg.id, msg.content)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '11px'
-                        }}
+                        className="ai-copy-btn"
                         title="Sao chép câu trả lời"
                       >
                         {isCopied ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
-                        <span>{isCopied ? 'Đã sao chép' : 'Sao chép'}</span>
+                        <span>{isCopied ? 'Đã chép' : 'Sao chép'}</span>
                       </button>
                     </div>
                   )}
                 </div>
 
                 {!isBot && (
-                  <div
-                    style={{
-                      width: '34px',
-                      height: '34px',
-                      borderRadius: '50%',
-                      backgroundColor: '#e2e8f0',
-                      color: '#334155',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}
-                  >
-                    <User size={17} />
+                  <div className="ai-user-avatar show-desktop">
+                    <User size={16} />
                   </div>
                 )}
               </div>
@@ -489,43 +356,13 @@ export default function AiAssistantPage() {
           })}
 
           {loading && (
-            <div
-              style={{
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'center',
-                color: 'var(--text-muted)',
-                fontSize: '13px'
-              }}
-            >
-              <div
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, var(--primary), #2563eb)',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <Bot size={17} />
+            <div className="ai-loading-indicator">
+              <div className="ai-bot-avatar">
+                <Bot size={16} />
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  backgroundColor: '#ffffff',
-                  padding: '10px 16px',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(0,0,0,0.05)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
-                }}
-              >
-                <Sparkles size={16} className="spin" color="var(--primary)" />
-                <span>Trợ lý AI đang truy vấn cơ sở dữ liệu và phân tích...</span>
+              <div className="ai-loading-bubble">
+                <Sparkles size={15} className="spin" color="var(--primary)" />
+                <span>Trợ lý AI đang truy vấn dữ liệu...</span>
               </div>
             </div>
           )}
@@ -534,17 +371,7 @@ export default function AiAssistantPage() {
         </div>
 
         {/* Quick Suggestion Pills */}
-        <div
-          style={{
-            padding: '8px 16px',
-            borderTop: '1px solid rgba(0,0,0,0.05)',
-            backgroundColor: 'rgba(255,255,255,0.6)',
-            display: 'flex',
-            gap: '8px',
-            overflowX: 'auto',
-            whiteSpace: 'nowrap'
-          }}
-        >
+        <div className="ai-suggestions-bar">
           {quickPresets.map((item, idx) => {
             const Icon = item.icon;
             return (
@@ -557,133 +384,60 @@ export default function AiAssistantPage() {
                   handleSendMessage(item.query);
                 }}
               >
-                <Icon size={12} color="var(--primary)" />
+                <Icon size={13} color="var(--primary)" />
                 <span>{item.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Modern Prompt Input Card (Matching user design screenshot) */}
-        <div
-          style={{
-            padding: '12px 16px',
-            backgroundColor: '#ffffff',
-            borderTop: '1px solid rgba(0,0,0,0.06)'
-          }}
-        >
-          <div
-            className="ai-prompt-card"
-            style={{
-              borderRadius: '22px',
-              border: '1px solid rgba(0,0,0,0.09)',
-              backgroundColor: '#fafafa',
-              padding: '12px 16px 10px 16px',
-              boxShadow: '0 6px 24px rgba(0,0,0,0.03)',
-              transition: 'border-color 0.2s, box-shadow 0.2s'
-            }}
-          >
-            {/* Context Tag Chip (Matching mockup Card 2: ↳ Text ✕) */}
+        {/* Modern Prompt Input Dock */}
+        <div className="ai-prompt-dock">
+          <div className="ai-prompt-card">
+            {/* Context Tag Chip */}
             {activeContext && (
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: '#f1f5f9',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  padding: '4px 10px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#0f172a',
-                  marginBottom: '8px'
-                }}
-              >
+              <div className="ai-context-chip">
                 <span style={{ color: 'var(--text-muted)' }}>↳</span>
                 <span>{activeContext}</span>
                 <button
                   type="button"
                   onClick={() => setActiveContext(null)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    cursor: 'pointer',
-                    color: 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}
+                  className="ai-context-close-btn"
                   title="Xóa ngữ cảnh"
                 >
-                  <X size={13} />
+                  <X size={12} />
                 </button>
               </div>
             )}
 
             {/* Listening Banner if Speech-to-text is active */}
             {isListening && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '4px 8px',
-                  marginBottom: '8px',
-                  fontSize: '12px',
-                  color: '#dc2626',
-                  fontWeight: 600,
-                  animation: 'pulse 1.5s infinite'
-                }}
-              >
+              <div className="ai-listening-banner">
                 <span className="voice-pulse-dot" />
-                <span>Đang lắng nghe giọng nói tiếng Việt... Hãy nói câu hỏi của bạn.</span>
+                <span>Đang lắng nghe giọng nói tiếng Việt... Hãy nói câu hỏi.</span>
               </div>
             )}
 
             {/* Main Input Textarea */}
             <textarea
               ref={textareaRef}
-              rows={2}
+              rows={1}
               className="ai-prompt-textarea"
-              placeholder="Hỏi bất kỳ điều gì về doanh thu, tồn kho, sản phẩm... (Ask anything)"
+              placeholder="Hỏi bất kỳ điều gì về doanh thu, tồn kho, sản phẩm..."
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage();
                 }
               }}
-              style={{
-                width: '100%',
-                border: 'none',
-                outline: 'none',
-                backgroundColor: 'transparent',
-                fontSize: '14px',
-                lineHeight: 1.5,
-                resize: 'none',
-                color: 'var(--text-primary)',
-                fontFamily: 'inherit'
-              }}
             />
 
             {/* Attach Popover Menu */}
             {isAttachOpen && (
-              <div
-                style={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '16px',
-                  padding: '8px',
-                  marginBottom: '10px',
-                  border: '1px solid rgba(0,0,0,0.08)',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px'
-                }}
-              >
-                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', padding: '4px 8px' }}>
+              <div className="ai-attach-popover">
+                <div className="ai-attach-popover-title">
                   CHỌN NGỮ CẢNH DỮ LIỆU ĐÍNH KÈM:
                 </div>
                 {attachOptions.map((opt, i) => (
@@ -694,44 +448,24 @@ export default function AiAssistantPage() {
                       setActiveContext(opt.tag);
                       setInputValue(opt.prompt);
                       setIsAttachOpen(false);
+                      if (textareaRef.current) {
+                        textareaRef.current.style.height = 'auto';
+                        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+                      }
                     }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      color: 'var(--text-primary)',
-                      transition: 'background 0.15s'
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    className="ai-attach-item-btn"
                   >
                     <span>{opt.label}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>+ Thêm</span>
+                    <span style={{ fontSize: '11px', color: 'var(--primary)' }}>+ Thêm</span>
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Action Bar with Pill Buttons (Exact Match to User Reference Screenshot) */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingTop: '6px',
-                marginTop: '4px'
-              }}
-            >
+            {/* Action Toolbar */}
+            <div className="ai-prompt-toolbar">
               {/* Left Action Pills: Attach, Search, Reason */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {/* 📎 Attach Pill Button */}
+              <div className="ai-tools-left">
                 <button
                   type="button"
                   className={`ai-pill-btn ${isAttachOpen ? 'active' : ''}`}
@@ -739,50 +473,52 @@ export default function AiAssistantPage() {
                   title="Đính kèm ngữ cảnh dữ liệu"
                 >
                   <Paperclip size={14} />
-                  <span>Attach</span>
+                  <span className="show-desktop-inline">Attach</span>
                 </button>
 
-                {/* 🌐 Search Pill Button */}
                 <button
                   type="button"
                   className={`ai-pill-btn ${isSearchActive ? 'active' : ''}`}
                   onClick={() => setIsSearchActive(!isSearchActive)}
-                  title="Chế độ tra cứu cơ sở dữ liệu thời gian thực"
+                  title={isSearchActive ? 'Tra cứu DB: Đang bật' : 'Bật tra cứu DB thời gian thực'}
                 >
                   <Globe size={14} />
-                  <span>Search</span>
+                  <span className="show-desktop-inline">Search</span>
+                  {isSearchActive && <span className="ai-active-dot green" />}
                 </button>
 
-                {/* 💡 Reason Pill Button */}
                 <button
                   type="button"
                   className={`ai-pill-btn ${isReasonActive ? 'active' : ''}`}
                   onClick={() => setIsReasonActive(!isReasonActive)}
-                  title="Chế độ suy luận sâu và dự báo ML"
+                  title={isReasonActive ? 'Suy luận ML: Đang bật' : 'Bật suy luận sâu ML'}
                 >
                   <Lightbulb size={14} />
-                  <span>Reason</span>
+                  <span className="show-desktop-inline">Reason</span>
+                  {isReasonActive && <span className="ai-active-dot amber" />}
                 </button>
               </div>
 
               {/* Right Action Pills: Voice & Send */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {/* Cancel / Clear button when input has text */}
+              <div className="ai-tools-right">
                 {(inputValue || activeContext) && (
                   <button
                     type="button"
                     onClick={() => {
                       setInputValue('');
                       setActiveContext(null);
+                      if (textareaRef.current) {
+                        textareaRef.current.style.height = 'auto';
+                      }
                     }}
                     className="ai-pill-btn-secondary"
-                    title="Hủy nội dung đang nhập"
+                    title="Hủy nội dung"
                   >
                     <span>Hủy</span>
                   </button>
                 )}
 
-                {/* ||| Voice Pill Button (Solid Black Pill as in Mockup) */}
+                {/* Voice Pill Button */}
                 <button
                   type="button"
                   onClick={toggleVoice}
@@ -791,17 +527,15 @@ export default function AiAssistantPage() {
                 >
                   {isListening ? (
                     <div className="voice-wave-bars">
-                      <span />
-                      <span />
-                      <span />
+                      <span /><span /><span />
                     </div>
                   ) : (
-                    <span style={{ letterSpacing: '1px', fontWeight: 800, fontSize: '13px' }}>|||</span>
+                    <span className="voice-bars-symbol">|||</span>
                   )}
-                  <span>Voice</span>
+                  <span className="show-desktop-inline">Voice</span>
                 </button>
 
-                {/* Solid Black Send Button (Matching Mockup) */}
+                {/* Solid Send Button - ALWAYS VISIBLE */}
                 <button
                   type="button"
                   onClick={() => handleSendMessage()}
@@ -809,8 +543,8 @@ export default function AiAssistantPage() {
                   className="ai-send-pill-btn"
                   title="Gửi câu hỏi (Enter)"
                 >
-                  <ArrowUp size={15} strokeWidth={2.5} />
-                  <span>Gửi</span>
+                  <ArrowUp size={16} strokeWidth={2.6} />
+                  <span className="show-desktop-inline">Gửi</span>
                 </button>
               </div>
             </div>
@@ -928,7 +662,8 @@ export default function AiAssistantPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: '16px'
+                gap: '16px',
+                flexWrap: 'wrap'
               }}
             >
               <div>
@@ -1065,20 +800,333 @@ export default function AiAssistantPage() {
       )}
 
       <style>{`
+        .ai-chat-container {
+          max-width: 960px;
+          margin: 0 auto;
+          height: calc(100vh - var(--header-height) - 32px);
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          padding: 10px 16px 16px 16px;
+          box-sizing: border-box;
+          overflow: hidden;
+        }
+
+        /* Top Header Card */
+        .ai-chat-header-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          padding: 10px 16px;
+          border-radius: var(--radius-lg);
+          backdrop-filter: blur(20px);
+          background-color: rgba(255, 255, 255, 0.88);
+          border: 1px solid rgba(0, 0, 0, 0.06);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+          flex-shrink: 0;
+        }
+
+        .ai-header-brand-wrap {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-width: 0;
+          flex: 1;
+        }
+
+        .ai-header-bot-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 11px;
+          background: linear-gradient(135deg, var(--primary), #2563eb);
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
+        }
+
+        .ai-header-info {
+          min-width: 0;
+        }
+
+        .ai-header-title-line {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          flex-wrap: nowrap;
+        }
+
+        .ai-header-heading {
+          font-size: 15px;
+          margin: 0;
+          font-weight: 700;
+          color: var(--text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .ai-header-live-badge {
+          font-size: 11px;
+          font-weight: 600;
+          padding: 2px 7px;
+          border-radius: 9999px;
+          background-color: #dcfce7;
+          color: #15803d;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          flex-shrink: 0;
+        }
+
+        .ai-pulse-dot-green {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background-color: #16a34a;
+          box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+          animation: pulse 1.6s infinite;
+        }
+
+        .ai-header-subtext {
+          font-size: 11.5px;
+          color: var(--text-muted);
+          margin-top: 1px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .ai-header-actions-wrap {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+
+        .ai-header-glass-btn {
+          padding: 6px 12px;
+          border-radius: 9999px;
+          font-size: 12px;
+          font-weight: 600;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          background: rgba(255, 255, 255, 0.85);
+          color: var(--text-primary);
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .ai-header-glass-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.07);
+        }
+
+        .ai-learn-btn {
+          background-color: rgba(37, 99, 235, 0.08);
+          color: var(--primary);
+          border-color: rgba(37, 99, 235, 0.22);
+        }
+        .ai-learn-pill-count {
+          background: var(--primary);
+          color: #ffffff;
+          font-size: 10.5px;
+          font-weight: 700;
+          padding: 1px 6px;
+          border-radius: 9999px;
+        }
+
+        /* Messages Body Card */
+        .ai-chat-body-card {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          padding: 0;
+          border-radius: var(--radius-xl);
+          background: rgba(255, 255, 255, 0.82);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(0, 0, 0, 0.06);
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+          min-height: 0;
+        }
+
+        .ai-messages-scroll-area {
+          flex: 1;
+          overflow-y: auto;
+          padding: 16px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .ai-message-row {
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+          width: 100%;
+        }
+        .ai-message-row.bot-row {
+          align-self: flex-start;
+          justify-content: flex-start;
+        }
+        .ai-message-row.user-row {
+          align-self: flex-end;
+          justify-content: flex-end;
+        }
+
+        .ai-bot-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, var(--primary), #2563eb);
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+        }
+
+        .ai-user-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background-color: #e2e8f0;
+          color: #334155;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .ai-message-bubble {
+          padding: 12px 16px;
+          border-radius: 18px;
+          font-size: 14px;
+          line-height: 1.6;
+          white-space: pre-wrap;
+          word-break: break-word;
+          position: relative;
+        }
+
+        .ai-message-bubble.bot-bubble {
+          background-color: #ffffff;
+          color: var(--text-primary);
+          border-top-left-radius: 4px;
+          box-shadow: 0 3px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+          border: 1px solid rgba(0, 0, 0, 0.06);
+          max-width: 85%;
+        }
+
+        .ai-message-bubble.user-bubble {
+          background-color: #0f172a;
+          color: #ffffff;
+          border-top-right-radius: 4px;
+          box-shadow: 0 4px 16px rgba(15, 23, 42, 0.18);
+          max-width: 78%;
+        }
+
+        .ai-tool-meta-bar {
+          margin-top: 8px;
+          padding-top: 8px;
+          border-top: 1px solid rgba(0, 0, 0, 0.06);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          font-size: 11px;
+          color: var(--text-muted);
+          flex-wrap: wrap;
+        }
+
+        .ai-tool-source-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .ai-tool-source-tag code {
+          background-color: #f1f5f9;
+          padding: 1px 6px;
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 11px;
+        }
+
+        .ai-copy-btn {
+          background: none;
+          border: none;
+          color: var(--text-muted);
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 11px;
+          padding: 2px 4px;
+          border-radius: 4px;
+        }
+        .ai-copy-btn:hover {
+          color: var(--primary);
+          background-color: #f8fafc;
+        }
+
+        .ai-loading-indicator {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          font-size: 13px;
+          color: var(--text-muted);
+        }
+        .ai-loading-bubble {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #ffffff;
+          padding: 9px 14px;
+          border-radius: 16px;
+          border: 1px solid rgba(0, 0, 0, 0.05);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Suggestions Row */
+        .ai-suggestions-bar {
+          padding: 6px 12px;
+          border-top: 1px solid rgba(0, 0, 0, 0.05);
+          background: rgba(255, 255, 255, 0.55);
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          white-space: nowrap;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          flex-shrink: 0;
+        }
+        .ai-suggestions-bar::-webkit-scrollbar {
+          display: none;
+        }
+
         .ai-suggestion-chip {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
+          gap: 5px;
+          padding: 5px 11px;
           font-size: 12px;
           font-weight: 500;
           color: var(--text-secondary);
           background-color: #ffffff;
-          border: 1px solid rgba(0,0,0,0.08);
+          border: 1px solid rgba(0, 0, 0, 0.08);
           border-radius: 9999px;
           cursor: pointer;
           flex-shrink: 0;
           transition: all 0.15s ease;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
         }
         .ai-suggestion-chip:hover {
           background-color: var(--primary-light);
@@ -1087,21 +1135,152 @@ export default function AiAssistantPage() {
           transform: translateY(-1px);
         }
 
-        /* Pill action button */
-        .ai-pill-btn {
+        /* Modern Prompt Input Dock */
+        .ai-prompt-dock {
+          padding: 10px 14px;
+          background-color: #ffffff;
+          border-top: 1px solid rgba(0, 0, 0, 0.06);
+          flex-shrink: 0;
+        }
+
+        .ai-prompt-card {
+          border-radius: 20px;
+          border: 1px solid rgba(0, 0, 0, 0.09);
+          background-color: #fafafa;
+          padding: 10px 14px 8px 14px;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+          transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+        .ai-prompt-card:focus-within {
+          border-color: rgba(37, 99, 235, 0.35);
+          background-color: #ffffff;
+          box-shadow: 0 6px 20px rgba(37, 99, 235, 0.08);
+        }
+
+        .ai-context-chip {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          padding: 6px 14px;
+          background-color: #f1f5f9;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 3px 8px;
+          font-size: 11.5px;
+          font-weight: 600;
+          color: #0f172a;
+          margin-bottom: 6px;
+        }
+        .ai-context-close-btn {
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          color: var(--text-muted);
+          display: flex;
+          align-items: center;
+        }
+
+        .ai-listening-banner {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 4px 6px;
+          margin-bottom: 6px;
+          fontSize: 12px;
+          color: #dc2626;
+          font-weight: 600;
+          animation: pulse 1.5s infinite;
+        }
+
+        .ai-prompt-textarea {
+          width: 100%;
+          min-height: 38px;
+          max-height: 120px;
+          border: none;
+          outline: none;
+          background-color: transparent;
+          font-size: 14px;
+          line-height: 1.5;
+          resize: none;
+          color: var(--text-primary);
+          font-family: inherit;
+          box-sizing: border-box;
+        }
+
+        .ai-attach-popover {
+          background-color: #ffffff;
+          border-radius: 14px;
+          padding: 6px;
+          margin-bottom: 8px;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          max-height: 180px;
+          overflow-y: auto;
+        }
+        .ai-attach-popover-title {
+          font-size: 10.5px;
+          font-weight: 700;
+          color: var(--text-muted);
+          padding: 3px 6px;
+        }
+        .ai-attach-item-btn {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 6px 10px;
+          border-radius: 6px;
+          border: none;
+          background-color: transparent;
+          text-align: left;
+          cursor: pointer;
+          font-size: 12.5px;
+          color: var(--text-primary);
+          transition: background 0.15s;
+        }
+        .ai-attach-item-btn:hover {
+          background-color: #f1f5f9;
+        }
+
+        .ai-prompt-toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 6px;
+          padding-top: 4px;
+          margin-top: 2px;
+        }
+
+        .ai-tools-left {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          min-width: 0;
+        }
+
+        .ai-tools-right {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+
+        .ai-pill-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 5px 12px;
           border-radius: 9999px;
           border: 1px solid rgba(0, 0, 0, 0.1);
           background-color: #ffffff;
           color: #334155;
-          font-size: 13px;
+          font-size: 12.5px;
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+          position: relative;
         }
         .ai-pill-btn:hover {
           background-color: #f8fafc;
@@ -1115,11 +1294,24 @@ export default function AiAssistantPage() {
           font-weight: 600;
         }
 
+        .ai-active-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+        .ai-active-dot.green {
+          background-color: #16a34a;
+        }
+        .ai-active-dot.amber {
+          background-color: #d97706;
+        }
+
         .ai-pill-btn-secondary {
           background: none;
           border: none;
-          padding: 6px 12px;
-          font-size: 13px;
+          padding: 5px 10px;
+          font-size: 12.5px;
           color: var(--text-muted);
           cursor: pointer;
           border-radius: 9999px;
@@ -1130,21 +1322,21 @@ export default function AiAssistantPage() {
           color: var(--text-primary);
         }
 
-        /* Voice Black Pill Button */
         .ai-voice-pill-btn {
           display: inline-flex;
           align-items: center;
-          gap: 7px;
-          padding: 7px 16px;
+          gap: 5px;
+          padding: 6px 14px;
           border-radius: 9999px;
           border: none;
           background-color: #09090b;
           color: #ffffff;
-          font-size: 13px;
+          font-size: 12.5px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s ease;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+          flex-shrink: 0;
         }
         .ai-voice-pill-btn:hover {
           background-color: #27272a;
@@ -1152,15 +1344,21 @@ export default function AiAssistantPage() {
         }
         .ai-voice-pill-btn.listening {
           background-color: #dc2626;
-          box-shadow: 0 0 16px rgba(220, 38, 38, 0.4);
+          box-shadow: 0 0 14px rgba(220, 38, 38, 0.4);
         }
 
-        /* Send Black Pill Button */
+        .voice-bars-symbol {
+          letter-spacing: 1px;
+          font-weight: 800;
+          font-size: 12px;
+        }
+
         .ai-send-pill-btn {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          padding: 7px 18px;
+          justify-content: center;
+          gap: 5px;
+          padding: 6px 16px;
           border-radius: 9999px;
           border: none;
           background-color: #09090b;
@@ -1170,9 +1368,10 @@ export default function AiAssistantPage() {
           cursor: pointer;
           transition: all 0.2s ease;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+          flex-shrink: 0;
         }
         .ai-send-pill-btn:hover:not(:disabled) {
-          background-color: #27272a;
+          background-color: var(--primary);
           transform: translateY(-1px);
         }
         .ai-send-pill-btn:disabled {
@@ -1215,9 +1414,75 @@ export default function AiAssistantPage() {
           50% { opacity: 0.4; }
         }
 
-        @media (min-width: 1024px) {
+        @media (max-width: 640px) {
           .ai-chat-container {
-            height: calc(100vh - var(--header-height) - 40px) !important;
+            padding: 4px 6px !important;
+            gap: 6px !important;
+            height: calc(100dvh - var(--header-height) - var(--mobile-nav-height) - env(safe-area-inset-bottom, 0px)) !important;
+            height: calc(100vh - var(--header-height) - var(--mobile-nav-height) - env(safe-area-inset-bottom, 0px)) !important;
+          }
+          .ai-chat-header-card {
+            padding: 8px 10px !important;
+            border-radius: var(--radius-md) !important;
+          }
+          .ai-header-bot-avatar {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 9px !important;
+          }
+          .ai-header-heading {
+            font-size: 14px !important;
+          }
+          .ai-header-glass-btn {
+            padding: 5px 8px !important;
+            font-size: 11px !important;
+          }
+          .ai-new-chat-btn {
+            width: 30px !important;
+            height: 30px !important;
+            padding: 0 !important;
+            justify-content: center;
+          }
+          .ai-chat-body-card {
+            border-radius: var(--radius-lg) !important;
+          }
+          .ai-messages-scroll-area {
+            padding: 10px 8px !important;
+            gap: 10px !important;
+          }
+          .ai-bot-avatar {
+            width: 28px !important;
+            height: 28px !important;
+          }
+          .ai-message-bubble.bot-bubble {
+            max-width: calc(100% - 38px) !important;
+            padding: 10px 12px !important;
+            font-size: 13.5px !important;
+            border-radius: 14px !important;
+            border-top-left-radius: 3px !important;
+          }
+          .ai-message-bubble.user-bubble {
+            max-width: 86% !important;
+            padding: 10px 12px !important;
+            font-size: 13.5px !important;
+            border-radius: 14px !important;
+            border-top-right-radius: 3px !important;
+          }
+          .ai-prompt-dock {
+            padding: 6px 8px !important;
+          }
+          .ai-prompt-card {
+            padding: 8px 10px 6px 10px !important;
+            border-radius: 16px !important;
+          }
+          .ai-pill-btn {
+            padding: 5px 7px !important;
+          }
+          .ai-voice-pill-btn {
+            padding: 6px 9px !important;
+          }
+          .ai-send-pill-btn {
+            padding: 6px 12px !important;
           }
         }
       `}</style>
