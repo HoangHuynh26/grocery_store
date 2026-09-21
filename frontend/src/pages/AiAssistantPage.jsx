@@ -2,12 +2,22 @@ import React, { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import { Bot, Send, User, Sparkles, RefreshCw, MessageSquare } from 'lucide-react';
 
+function cleanAiText(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+    .replace(/_{1,3}([^_]+)_{1,3}/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*/g, '')
+    .trim();
+}
+
 export default function AiAssistantPage() {
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
       role: 'assistant',
-      content: `Xin chào! Tôi là **Trợ Lý AI Doanh Nghiệp (LangGraph Agent)** của Cửa Hàng Tạp Hóa.\n\nTôi có thể giúp bạn tra cứu nhanh doanh thu, tình hình bán hàng theo ngày/tháng, sản phẩm bán chạy, cảnh báo tồn kho và dự báo doanh thu tháng tới bằng mô hình Machine Learning.\n\nHãy chọn câu hỏi gợi ý bên dưới hoặc nhập câu hỏi của bạn!`
+      content: `Xin chào! Tôi là Trợ Lý AI Doanh Nghiệp (LangGraph Agent) của Cửa Hàng Tạp Hóa.\n\nTôi có thể giúp bạn tra cứu nhanh doanh thu (theo ngày hoặc theo từng khung giờ cụ thể), tình hình bán hàng, sản phẩm bán chạy, cảnh báo tồn kho và dự báo doanh thu tháng tới bằng mô hình Machine Learning.\n\nHãy chọn câu hỏi gợi ý bên dưới hoặc nhập câu hỏi của bạn!`
     }
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -16,6 +26,7 @@ export default function AiAssistantPage() {
   const messagesEndRef = useRef(null);
 
   const samplePrompts = [
+    'Vào lúc 13 giờ hôm nay có doanh thu nào không?',
     'Doanh thu hôm nay bao nhiêu?',
     'Hôm nay bán được bao nhiêu tiền?',
     'Giá của Coca Cola là bao nhiêu?',
@@ -47,7 +58,8 @@ export default function AiAssistantPage() {
 
     try {
       const res = await api.post('/ai/chat', { message: text, sessionId });
-      const replyContent = res?.data?.reply || res?.reply || (typeof res?.data === 'string' ? res.data : 'Đã nhận câu trả lời.');
+      const rawReply = res?.data?.reply || res?.reply || (typeof res?.data === 'string' ? res.data : 'Đã nhận câu trả lời.');
+      const replyContent = cleanAiText(rawReply);
       const toolUsed = res?.data?.toolUsed || res?.toolUsed || null;
       const returnedSessionId = res?.data?.sessionId || res?.sessionId;
       if (returnedSessionId && !sessionId) {
@@ -178,7 +190,7 @@ export default function AiAssistantPage() {
                   whiteSpace: 'pre-wrap',
                   boxShadow: 'var(--shadow-sm)'
                 }}>
-                  {msg.content}
+                  {cleanAiText(msg.content)}
 
                   {msg.toolUsed && (
                     <div style={{
