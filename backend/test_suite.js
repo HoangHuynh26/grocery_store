@@ -507,6 +507,43 @@ async function runTests() {
   assert(Array.isArray(trainingLogsRes.data.data) && trainingLogsRes.data.data.length > 0, 'Training epoch logs returned array of runs');
   assert(trainingLogsRes.data.data[0].status === 'SUCCESS', `Latest epoch status is ${trainingLogsRes.data.data[0].status}`);
 
+  // TEST 14: AI Visual Product Recognition (Camera Packaging & Label Scanner)
+  console.log('\n[14] Testing AI Visual Product Recognition Engine...');
+
+  // 14.1 Reject empty image & hint
+  const failVisionRes = await request('/ai/recognize-product-image', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${staffToken}` },
+    body: JSON.stringify({})
+  });
+  assert(failVisionRes.status === 400 && failVisionRes.data.error.code === 'MISSING_IMAGE', 'Rejects empty image recognition request');
+
+  // 14.2 Recognize Beverage by packaging label keywords
+  const cocaVisionRes = await request('/ai/recognize-product-image', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${staffToken}` },
+    body: JSON.stringify({
+      hintText: 'coca cola lon 330ml',
+      imageBase64: 'sample_base64_stream'
+    })
+  });
+  assert(cocaVisionRes.status === 200, 'Visual recognition endpoint returns 200 OK');
+  assert(cocaVisionRes.data.data.success === true, 'Visual recognition successfully matched product');
+  assert(cocaVisionRes.data.data.product?.name.toLowerCase().includes('coca'), `Correctly identified product: ${cocaVisionRes.data.data.product?.name}`);
+  assert(cocaVisionRes.data.data.confidence > 0.5, `High confidence score: ${cocaVisionRes.data.data.confidence}`);
+
+  // 14.3 Recognize Noodle package by label
+  const noodleVisionRes = await request('/ai/recognize-product-image', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${staffToken}` },
+    body: JSON.stringify({
+      hintText: 'mì gói hảo hảo tôm chua cay',
+      imageBase64: 'sample_base64_stream'
+    })
+  });
+  assert(noodleVisionRes.status === 200 && noodleVisionRes.data.data.success === true, 'Recognized noodle packaging successfully');
+  assert(noodleVisionRes.data.data.product?.name.toLowerCase().includes('hảo hảo'), `Matched: ${noodleVisionRes.data.data.product?.name}`);
+
   console.log('\n====================================================');
   console.log(` TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================');

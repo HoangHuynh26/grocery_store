@@ -4,7 +4,7 @@ import { useSocket } from '../contexts/SocketContext';
 import { formatCurrency } from '../utils/formatters';
 import api from '../services/api';
 import confetti from 'canvas-confetti';
-import { QrCode, Search, ShoppingBag, Plus, AlertTriangle, Check, RefreshCw, Package, Filter, ChevronDown, X, Flame, Sparkles, Zap } from 'lucide-react';
+import { QrCode, Search, ShoppingBag, Plus, AlertTriangle, Check, RefreshCw, Package, Filter, ChevronDown, X, Flame, Sparkles, Zap, Camera } from 'lucide-react';
 import QrScannerModal from '../components/pos/QrScannerModal';
 import CartDrawer from '../components/pos/CartDrawer';
 import ReceiptModal from '../components/pos/ReceiptModal';
@@ -285,11 +285,21 @@ export default function PosPage() {
               type="button"
               className="btn btn-primary"
               onClick={() => setIsScannerOpen(true)}
-              style={{ height: '42px', padding: '0 16px', flexShrink: 0, gap: '6px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
-              title="Quét Mã Barcode / QR (Nhận diện tức thì)"
+              style={{
+                height: '42px',
+                padding: '0 16px',
+                flexShrink: 0,
+                gap: '8px',
+                whiteSpace: 'nowrap',
+                display: 'inline-flex',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.28)'
+              }}
+              title="Quét Camera Kép: Mã Vạch Siêu Tốc & AI Nhận Diện Bao Bì"
             >
-              <QrCode size={18} />
-              <span style={{ fontWeight: 700, fontSize: '13px' }}>Quét Mã</span>
+              <Camera size={18} />
+              <span style={{ fontWeight: 700, fontSize: '13px' }}>Quét SP & Mã Vạch</span>
             </button>
           </div>
 

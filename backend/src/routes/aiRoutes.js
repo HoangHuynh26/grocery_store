@@ -20,4 +20,7 @@ router.get('/learning-stats', AiController.getLearningStats);
 router.get('/training-logs', AiController.getTrainingLogs);
 router.post('/self-train', requireAdmin, AiController.triggerSelfTraining);
 
+// AI Visual Product Recognition (Camera Packaging & Label Scanner)
+router.post('/recognize-product-image', AiController.recognizeProductImage);
+
 module.exports = router;

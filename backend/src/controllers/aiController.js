@@ -4,6 +4,7 @@ const ProductClassifier = require('../modules/ai/classifier/productClassifier');
 const { EmbeddingService } = require('../modules/ai/embedding/embeddingService');
 const cronScheduler = require('../modules/ai/embedding/cronScheduler');
 const ContinuousLearningEngine = require('../modules/ai/learning/continuousLearningEngine');
+const ProductVisionEngine = require('../modules/ai/vision/productVisionEngine');
 const { query } = require('../database');
 const { createAuditLog } = require('../repositories/auditRepository');
 const { AppError } = require('../middleware/errorHandler');
@@ -197,6 +198,29 @@ class AiController {
         success: true,
         data: result,
         message: 'Hoàn tất phiên tự học và huấn luyện toàn diện các mô hình AI.'
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async recognizeProductImage(req, res, next) {
+    try {
+      const { image, imageBase64, hintText } = req.body;
+      const targetImage = imageBase64 || image;
+
+      if (!targetImage && !hintText) {
+        throw new AppError('Vui lòng cung cấp hình ảnh sản phẩm hoặc gợi ý nhãn hàng.', 400, 'MISSING_IMAGE');
+      }
+
+      const result = await ProductVisionEngine.recognizeProduct({
+        imageBase64: targetImage,
+        hintText
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: result
       });
     } catch (err) {
       next(err);
