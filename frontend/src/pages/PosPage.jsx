@@ -137,8 +137,8 @@ export default function PosPage() {
       <div className={`pos-catalog-scroll ${totalUnits > 0 ? 'has-cart' : ''}`}>
         {/* Top Controls: Search Bar, Category Popdown, and QR Scanner Trigger */}
         <div className="pos-controls-container">
-          <div className="pos-controls-top-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
-            <div className="pos-search-wrapper" style={{ position: 'relative', flex: 1, minWidth: '160px' }}>
+          <div className="pos-controls-top-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0, width: '100%' }}>
+            <div className="pos-search-wrapper" style={{ position: 'relative', flex: 1, minWidth: 0 }}>
               <input
                 type="text"
                 className="form-control"
@@ -442,7 +442,10 @@ export default function PosPage() {
                     opacity: isOutOfStock ? 0.5 : 1,
                     transition: 'all 0.15s ease',
                     position: 'relative',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    minWidth: 0,
+                    maxWidth: '100%',
+                    boxSizing: 'border-box'
                   }}
                   className="product-card"
                 >
@@ -506,7 +509,7 @@ export default function PosPage() {
                   </div>
 
                   {/* Name & Code */}
-                  <div style={{ marginBottom: '10px' }}>
+                  <div style={{ marginBottom: '10px', minWidth: 0, width: '100%' }}>
                     <div
                       className="product-name-clamp"
                       style={{
@@ -518,18 +521,19 @@ export default function PosPage() {
                         overflow: 'hidden',
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical'
+                        WebkitBoxOrient: 'vertical',
+                        wordBreak: 'break-word'
                       }}
                     >
                       {p.name}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', display: 'block' }}>
                       {p.product_code}
                     </div>
                   </div>
 
                   {/* Price & Add Action */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--border-color)', minWidth: 0, width: '100%' }}>
                     <div style={{ fontWeight: 800, fontSize: '15px', color: 'var(--primary)' }}>
                       {formatCurrency(p.selling_price)}
                     </div>
@@ -656,7 +660,7 @@ export default function PosPage() {
           .mobile-cart-bar { display: none !important; }
         }
         @media (max-width: 640px) {
-          .product-card { padding: 9px !important; }
+          .product-card { padding: 9px !important; min-width: 0 !important; max-width: 100% !important; width: 100% !important; box-sizing: border-box !important; }
           .product-card-img-wrap { height: 92px !important; }
           .product-name-clamp { font-size: 13px !important; height: 32px !important; }
         }
