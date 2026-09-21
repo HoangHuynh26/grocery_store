@@ -77,6 +77,38 @@ class InvoiceController {
       next(err);
     }
   }
+
+  static async updatePayment(req, res, next) {
+    const clientIp = req.ip || req.headers['x-forwarded-for'];
+    const userAgent = req.headers['user-agent'];
+
+    try {
+      const { paymentMethod, amountPaid, transactionReference, reason } = req.body;
+
+      if (!paymentMethod) {
+        throw new AppError('Hình thức thanh toán không được để trống.', 400, 'PAYMENT_METHOD_REQUIRED');
+      }
+
+      const updated = await InvoiceService.updateInvoicePayment({
+        invoiceId: req.params.id,
+        paymentMethod,
+        amountPaid,
+        transactionReference,
+        reason,
+        userId: req.user.id,
+        clientIp,
+        userAgent
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: updated,
+        message: 'Cập nhật hình thức thanh toán và số tiền khách đưa thành công.'
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = InvoiceController;

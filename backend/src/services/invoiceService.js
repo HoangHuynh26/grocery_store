@@ -185,6 +185,138 @@ class InvoiceService {
       client.release();
     }
   }
+
+  /**
+   * Update invoice payment method and cash received / change calculation
+   */
+  static async updateInvoicePayment({
+    invoiceId,
+    paymentMethod,
+    amountPaid,
+    transactionReference,
+    reason,
+    userId,
+    clientIp,
+    userAgent
+  }) {
+    if (!reason || reason.trim().length < 3) {
+      throw new AppError('Bắt buộc phải nhập lý do khi thay đổi thông tin thanh toán.', 400, 'REASON_REQUIRED');
+    }
+
+    const currentInvoice = await findById(invoiceId);
+    if (!currentInvoice) {
+      throw new AppError('Không tìm thấy hóa đơn cần cập nhật thanh toán.', 404, 'INVOICE_NOT_FOUND');
+    }
+
+    if (currentInvoice.status === 'CANCELLED') {
+      throw new AppError('Hóa đơn đã bị hủy, không thể thay đổi thông tin thanh toán.', 400, 'INVOICE_CANCELLED');
+    }
+
+    const normalizedMethod = (paymentMethod || 'CASH').toUpperCase().trim();
+    if (!['CASH', 'TRANSFER', 'MOMO'].includes(normalizedMethod)) {
+      throw new AppError(`Hình thức thanh toán "${paymentMethod}" không hợp lệ.`, 400, 'INVALID_PAYMENT_METHOD');
+    }
+
+    const totalAmount = parseFloat(currentInvoice.total_amount);
+    let finalAmountPaid = totalAmount;
+    let finalChangeAmount = 0;
+
+    if (normalizedMethod === 'CASH') {
+      finalAmountPaid = amountPaid !== undefined && amountPaid !== null && amountPaid !== '' 
+        ? parseFloat(amountPaid) 
+        : totalAmount;
+      if (isNaN(finalAmountPaid) || finalAmountPaid < totalAmount) {
+        throw new AppError(
+          `Số tiền khách đưa (${finalAmountPaid.toLocaleString('vi-VN')} đ) không đủ thanh toán tổng tiền hóa đơn (${totalAmount.toLocaleString('vi-VN')} đ).`,
+          400,
+          'INSUFFICIENT_PAYMENT'
+        );
+      }
+      finalChangeAmount = Math.max(0, finalAmountPaid - totalAmount);
+    } else {
+      finalAmountPaid = totalAmount;
+      finalChangeAmount = 0;
+    }
+
+    const finalReference = transactionReference ? transactionReference.trim() : (
+      normalizedMethod === 'TRANSFER' && !currentInvoice.transaction_reference
+        ? `TRANS_${Date.now()}`
+        : currentInvoice.transaction_reference || null
+    );
+
+    const client = await getClient();
+
+    try {
+      await client.query('BEGIN;');
+
+      const oldValues = {
+        paymentMethod: currentInvoice.payment_method,
+        amountDue: currentInvoice.amount_due || currentInvoice.total_amount,
+        amountPaid: currentInvoice.amount_paid,
+        changeAmount: currentInvoice.change_amount,
+        transactionReference: currentInvoice.transaction_reference
+      };
+
+      // Check if payment row already exists for this invoice
+      const checkPayment = await client.query(`SELECT id FROM payments WHERE invoice_id = $1;`, [invoiceId]);
+
+      if (checkPayment.rowCount > 0) {
+        await client.query(
+          `UPDATE payments 
+           SET payment_method = $1,
+               amount_due = $2,
+               amount_paid = $3,
+               change_amount = $4,
+               transaction_reference = $5,
+               payment_status = 'PAID'
+           WHERE invoice_id = $6;`,
+          [normalizedMethod, totalAmount, finalAmountPaid, finalChangeAmount, finalReference, invoiceId]
+        );
+      } else {
+        await client.query(
+          `INSERT INTO payments (
+            invoice_id, payment_method, amount_due, amount_paid, change_amount, payment_status, transaction_reference, created_at
+          ) VALUES ($1, $2, $3, $4, $5, 'PAID', $6, NOW());`,
+          [invoiceId, normalizedMethod, totalAmount, finalAmountPaid, finalChangeAmount, finalReference]
+        );
+      }
+
+      // Update invoice updated_at
+      await client.query(
+        `UPDATE invoices SET updated_at = NOW() WHERE id = $1;`,
+        [invoiceId]
+      );
+
+      // Write Audit Log
+      await createAuditLog({
+        userId,
+        action: 'UPDATE_INVOICE_PAYMENT',
+        entityType: 'INVOICE',
+        entityId: invoiceId,
+        oldValues,
+        newValues: {
+          paymentMethod: normalizedMethod,
+          amountDue: totalAmount,
+          amountPaid: finalAmountPaid,
+          changeAmount: finalChangeAmount,
+          transactionReference: finalReference
+        },
+        reason: reason.trim(),
+        ipAddress: clientIp,
+        userAgent,
+        dbClient: client
+      });
+
+      await client.query('COMMIT;');
+
+      return await findById(invoiceId);
+    } catch (err) {
+      await client.query('ROLLBACK;');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = InvoiceService;

@@ -18,7 +18,8 @@ import {
   DollarSign,
   TrendingUp,
   X,
-  Filter
+  Filter,
+  CreditCard
 } from 'lucide-react';
 import Modal from '../components/common/Modal';
 
@@ -45,6 +46,15 @@ export default function InvoicesPage() {
   const [adjustReason, setAdjustReason] = useState('');
   const [adjustError, setAdjustError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Payment Method & Cash Received Adjust Modal
+  const [paymentModalInvoice, setPaymentModalInvoice] = useState(null);
+  const [newPaymentMethod, setNewPaymentMethod] = useState('CASH');
+  const [amountPaidInput, setAmountPaidInput] = useState('');
+  const [referenceInput, setReferenceInput] = useState('');
+  const [paymentReason, setPaymentReason] = useState('');
+  const [paymentError, setPaymentError] = useState('');
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
 
   // Helper to apply date presets
   const applyDatePreset = (preset) => {
@@ -184,6 +194,63 @@ export default function InvoicesPage() {
       setAdjustError(err.response?.data?.error?.message || err.message || 'Lỗi điều chỉnh hóa đơn.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const openPaymentModal = async (invoiceId) => {
+    try {
+      const res = await api.get(`/invoices/${invoiceId}`);
+      const inv = res.data?.data || res.data;
+      setPaymentModalInvoice(inv);
+      setNewPaymentMethod(inv.payment_method || 'CASH');
+      setAmountPaidInput(inv.payment_method === 'CASH' && inv.amount_paid ? String(inv.amount_paid) : String(inv.total_amount));
+      setReferenceInput(inv.transaction_reference || '');
+      setPaymentReason('');
+      setPaymentError('');
+    } catch (e) {
+      alert('Lỗi khi tải thông tin thanh toán của hóa đơn.');
+    }
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (!paymentReason || paymentReason.trim().length < 3) {
+      setPaymentError('Vui lòng nhập lý do thay đổi thanh toán (tối thiểu 3 ký tự).');
+      return;
+    }
+
+    const totalAmt = parseFloat(paymentModalInvoice?.total_amount || 0);
+
+    if (newPaymentMethod === 'CASH') {
+      const parsedPaid = parseFloat(amountPaidInput);
+      if (isNaN(parsedPaid) || parsedPaid < totalAmt) {
+        setPaymentError(`Số tiền khách đưa (${parsedPaid ? formatCurrency(parsedPaid) : '0 đ'}) phải lớn hơn hoặc bằng tổng tiền (${formatCurrency(totalAmt)}).`);
+        return;
+      }
+    }
+
+    try {
+      setPaymentSubmitting(true);
+      setPaymentError('');
+      await api.put(`/invoices/${paymentModalInvoice.id}/payment`, {
+        paymentMethod: newPaymentMethod,
+        amountPaid: newPaymentMethod === 'CASH' ? parseFloat(amountPaidInput) : totalAmt,
+        transactionReference: referenceInput ? referenceInput.trim() : undefined,
+        reason: paymentReason.trim()
+      });
+
+      // Update viewInvoice if currently open
+      if (viewInvoice && viewInvoice.id === paymentModalInvoice.id) {
+        const refreshed = await api.get(`/invoices/${paymentModalInvoice.id}`);
+        setViewInvoice(refreshed.data?.data || refreshed.data);
+      }
+
+      setPaymentModalInvoice(null);
+      loadInvoices();
+    } catch (err) {
+      setPaymentError(err.response?.data?.error?.message || err.message || 'Lỗi khi cập nhật thanh toán.');
+    } finally {
+      setPaymentSubmitting(false);
     }
   };
 
@@ -491,6 +558,18 @@ export default function InvoicesPage() {
                         <Eye size={14} />
                       </button>
 
+                      {inv.status !== 'CANCELLED' && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-icon"
+                          style={{ width: '32px', height: '32px', color: 'var(--primary)' }}
+                          onClick={() => openPaymentModal(inv.id)}
+                          title="Sửa hình thức thanh toán & tiền khách đưa"
+                        >
+                          <CreditCard size={14} />
+                        </button>
+                      )}
+
                       {isSuperAdmin && inv.status !== 'CANCELLED' && (
                         <button
                           type="button"
@@ -658,7 +737,7 @@ export default function InvoicesPage() {
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '16px', padding: '0 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px', padding: '0 12px' }}>
             <button
               type="button"
               className="btn btn-secondary"
@@ -668,6 +747,18 @@ export default function InvoicesPage() {
               <Printer size={16} />
               <span>In Hóa Đơn</span>
             </button>
+            {viewInvoice.status !== 'CANCELLED' && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => openPaymentModal(viewInvoice.id)}
+                style={{ flex: 1, color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                title="Sửa thanh toán"
+              >
+                <CreditCard size={15} />
+                <span>Sửa Thanh Toán</span>
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-primary"
@@ -1015,6 +1106,298 @@ export default function InvoicesPage() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Edit Payment Method & Cash Received Modal */}
+      {paymentModalInvoice && (
+        <Modal
+          isOpen={!!paymentModalInvoice}
+          onClose={() => setPaymentModalInvoice(null)}
+          title={`Sửa Thanh Toán Hóa Đơn: ${paymentModalInvoice.invoice_number}`}
+          maxWidth="560px"
+        >
+          {(() => {
+            const totalAmt = parseFloat(paymentModalInvoice.total_amount || 0);
+            const numPaid = parseFloat(amountPaidInput || 0);
+            const liveChange = !isNaN(numPaid) && numPaid >= totalAmt ? numPaid - totalAmt : 0;
+            const isInsufficient = newPaymentMethod === 'CASH' && (!amountPaidInput || isNaN(numPaid) || numPaid < totalAmt);
+
+            // Generate convenient preset amounts
+            const presets = [totalAmt];
+            [50000, 100000, 200000, 500000, 1000000].forEach(denom => {
+              if (denom > totalAmt && !presets.includes(denom)) {
+                presets.push(denom);
+              }
+            });
+            const next50k = Math.ceil(totalAmt / 50000) * 50000;
+            if (next50k > totalAmt && !presets.includes(next50k)) {
+              presets.push(next50k);
+            }
+            presets.sort((a, b) => a - b);
+
+            const reasonPresets = [
+              'Khách đổi sang chuyển khoản',
+              'Khách đổi sang trả tiền mặt',
+              'Sửa lại số tiền mặt khách đưa',
+              'Thu ngân chọn nhầm hình thức thanh toán'
+            ];
+
+            return (
+              <form onSubmit={handlePaymentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Summary Info Banner */}
+                <div style={{
+                  padding: '14px 16px',
+                  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                  border: '1px solid #bae6fd',
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '11px', color: '#0369a1', fontWeight: 600, textTransform: 'uppercase' }}>
+                      Tổng Tiền Cần Thanh Toán
+                    </div>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: '#0284c7', marginTop: '2px' }}>
+                      {formatCurrency(totalAmt)}
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right', fontSize: '12px', color: '#0369a1' }}>
+                    <div>Thu ngân: <strong>{paymentModalInvoice.created_by_name}</strong></div>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>{formatDateTime(paymentModalInvoice.created_at)}</div>
+                  </div>
+                </div>
+
+                {paymentError && (
+                  <div style={{
+                    padding: '10px 14px',
+                    backgroundColor: 'var(--danger-bg)',
+                    color: 'var(--danger)',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                    <span>{paymentError}</span>
+                  </div>
+                )}
+
+                {/* Select Payment Method */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700 }}>
+                    Chọn Hình Thức Thanh Toán Mới *
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '6px' }}>
+                    <button
+                      type="button"
+                      className={`btn ${newPaymentMethod === 'CASH' ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => {
+                        setNewPaymentMethod('CASH');
+                        if (!amountPaidInput || parseFloat(amountPaidInput) < totalAmt) {
+                          setAmountPaidInput(String(totalAmt));
+                        }
+                      }}
+                      style={{ padding: '10px 8px', fontSize: '13px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                    >
+                      <span style={{ fontSize: '18px' }}>💵</span>
+                      <span>Tiền Mặt</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`btn ${newPaymentMethod === 'TRANSFER' ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => {
+                        setNewPaymentMethod('TRANSFER');
+                        setAmountPaidInput(String(totalAmt));
+                      }}
+                      style={{ padding: '10px 8px', fontSize: '13px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                    >
+                      <span style={{ fontSize: '18px' }}>🏦</span>
+                      <span>Chuyển Khoản</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`btn ${newPaymentMethod === 'MOMO' ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => {
+                        setNewPaymentMethod('MOMO');
+                        setAmountPaidInput(String(totalAmt));
+                      }}
+                      style={{ padding: '10px 8px', fontSize: '13px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                    >
+                      <span style={{ fontSize: '18px' }}>📱</span>
+                      <span>Ví MoMo</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* If Cash: Adjust Amount Paid & Calculate Change */}
+                {newPaymentMethod === 'CASH' ? (
+                  <div style={{
+                    padding: '14px',
+                    backgroundColor: 'var(--bg-card-secondary)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        Số tiền khách đưa (VNĐ) *
+                      </label>
+                      <input
+                        type="number"
+                        step="1000"
+                        min={totalAmt}
+                        className="form-control"
+                        style={{ fontSize: '16px', fontWeight: 700, padding: '10px 14px' }}
+                        value={amountPaidInput}
+                        onChange={(e) => setAmountPaidInput(e.target.value)}
+                        placeholder="Nhập số tiền khách đưa..."
+                        required
+                      />
+                    </div>
+
+                    {/* Quick Cash Presets */}
+                    <div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                        Gợi ý tiền nhanh:
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {presets.slice(0, 5).map((p, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => setAmountPaidInput(String(p))}
+                            style={{
+                              padding: '4px 10px',
+                              fontSize: '11.5px',
+                              borderRadius: '9999px',
+                              background: numPaid === p ? 'var(--primary)' : '#ffffff',
+                              color: numPaid === p ? '#ffffff' : 'inherit',
+                              borderColor: numPaid === p ? 'var(--primary)' : undefined
+                            }}
+                          >
+                            {p === totalAmt ? `Đúng số tiền: ${formatCurrency(p)}` : formatCurrency(p)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Real-time Change Amount Display */}
+                    <div style={{
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      backgroundColor: isInsufficient ? '#fef2f2' : '#f0fdf4',
+                      border: `1px solid ${isInsufficient ? '#fecaca' : '#bbf7d0'}`,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: isInsufficient ? '#991b1b' : '#166534' }}>
+                        {isInsufficient ? '⚠️ Số tiền khách đưa còn thiếu:' : '💰 Tiền thối lại cho khách:'}
+                      </span>
+                      <span style={{ fontSize: '18px', fontWeight: 800, color: isInsufficient ? '#dc2626' : '#16a34a' }}>
+                        {isInsufficient
+                          ? formatCurrency(totalAmt - (numPaid || 0))
+                          : formatCurrency(liveChange)
+                        }
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '14px',
+                    backgroundColor: 'var(--bg-card-secondary)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}>
+                    <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
+                      💡 Khi chọn {newPaymentMethod === 'TRANSFER' ? 'Chuyển khoản ngân hàng' : 'Ví MoMo'}, số tiền thực nhận tự động bằng đúng tổng tiền hóa đơn (<strong>{formatCurrency(totalAmt)}</strong>). Tiền thối là <strong>0 đ</strong>.
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">
+                        Mã tham chiếu / Mã giao dịch (Tùy chọn)
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="VD: FT240921..., MOMO123456..."
+                        value={referenceInput}
+                        onChange={(e) => setReferenceInput(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Reason Field */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 600 }}>
+                    Lý do điều chỉnh (Bắt buộc cho Audit Log) *
+                  </label>
+
+                  {/* Reason presets */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '8px' }}>
+                    {reasonPresets.map((r, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => setPaymentReason(r)}
+                        style={{
+                          padding: '3px 8px',
+                          fontSize: '11px',
+                          borderRadius: '6px',
+                          background: paymentReason === r ? 'var(--primary-light)' : '#ffffff',
+                          color: paymentReason === r ? 'var(--primary)' : 'var(--text-muted)',
+                          borderColor: paymentReason === r ? 'var(--primary)' : undefined
+                        }}
+                      >
+                        + {r}
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    placeholder="VD: Khách đổi sang tiền mặt hoặc nhập nhầm tiền khách đưa..."
+                    value={paymentReason}
+                    onChange={(e) => setPaymentReason(e.target.value)}
+                    required
+                  />
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setPaymentModalInvoice(null)}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={paymentSubmitting || isInsufficient}
+                  >
+                    {paymentSubmitting ? 'Đang lưu...' : 'Xác Nhận Lưu Thay Đổi'}
+                  </button>
+                </div>
+              </form>
+            );
+          })()}
         </Modal>
       )}
     </div>

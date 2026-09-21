@@ -210,25 +210,26 @@ async function runTests() {
 
   // TEST 6: Idempotency Protection
   console.log('\n[6] Testing Idempotency Protection against Double Submissions...');
+  const inStockProduct = prods.data.data.items.find(p => p.stock_quantity >= 5) || sampleProduct;
   const testIdempKey = `IDEMP_DOUBLE_CLICK_${Date.now()}`;
   const firstReq = await request('/pos/checkout', {
     method: 'POST',
     headers: { Authorization: `Bearer ${adminToken}`, 'idempotency-key': testIdempKey },
     body: JSON.stringify({
-      items: [{ productId: sampleProduct.id, quantity: 1 }],
+      items: [{ productId: inStockProduct.id, quantity: 1 }],
       paymentMethod: 'CASH',
       amountPaid: 100000
     })
   });
   assert(firstReq.status === 200, 'First checkout with idempotency key succeeded');
-  const firstInvoiceId = firstReq.data.data.id;
+  const firstInvoiceId = firstReq.data?.data?.id;
 
   // Immediate second duplicate submission with identical key
   const secondReq = await request('/pos/checkout', {
     method: 'POST',
     headers: { Authorization: `Bearer ${adminToken}`, 'idempotency-key': testIdempKey },
     body: JSON.stringify({
-      items: [{ productId: sampleProduct.id, quantity: 1 }],
+      items: [{ productId: inStockProduct.id, quantity: 1 }],
       paymentMethod: 'CASH',
       amountPaid: 100000
     })
@@ -594,6 +595,67 @@ async function runTests() {
   });
   assert(sampleAudioRes.status === 200, 'Audio transcription endpoint responds with 200 OK');
   assert(typeof sampleAudioRes.data.text === 'string' || sampleAudioRes.data.success !== undefined, 'Audio transcription returns valid response format');
+
+  // TEST 17: Invoice Payment Method & Cash Received Adjustment
+  console.log('\n[17] Testing Invoice Payment Method & Cash Received Adjustment...');
+
+  // 17.1 Get a recent invoice
+  const invListRes = await request('/invoices?limit=1', {
+    headers: { Authorization: `Bearer ${adminToken}` }
+  });
+  assert(invListRes.status === 200 && invListRes.data.data.items.length > 0, 'Found existing invoice to test payment update');
+  const testInv = invListRes.data.data.items[0];
+  const testInvTotal = parseFloat(testInv.total_amount);
+
+  // 17.2 Reject cash payment if amount paid is insufficient
+  const insufficientRes = await request(`/invoices/${testInv.id}/payment`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({
+      paymentMethod: 'CASH',
+      amountPaid: Math.max(0, testInvTotal - 1000),
+      reason: 'Khách đưa thiếu tiền'
+    })
+  });
+  assert(insufficientRes.status === 400, 'Rejects insufficient cash amount (< total_amount) with 400');
+
+  // 17.3 Switch payment method to TRANSFER
+  const transferUpdateRes = await request(`/invoices/${testInv.id}/payment`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${staffToken}` },
+    body: JSON.stringify({
+      paymentMethod: 'TRANSFER',
+      transactionReference: 'MB_TEST_998877',
+      reason: 'Khách đổi ý chuyển khoản ngân hàng'
+    })
+  });
+  assert(transferUpdateRes.status === 200, 'Successfully updated payment method to TRANSFER via Staff/Admin token');
+  assert(transferUpdateRes.data.data.payment_method === 'TRANSFER', 'Payment method is now TRANSFER');
+  assert(parseFloat(transferUpdateRes.data.data.change_amount) === 0, 'Change amount for transfer is 0');
+
+  // 17.4 Switch back to CASH with cash received adjustment
+  const cashAdjustAmount = testInvTotal + 50000;
+  const cashUpdateRes = await request(`/invoices/${testInv.id}/payment`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({
+      paymentMethod: 'CASH',
+      amountPaid: cashAdjustAmount,
+      reason: 'Khách trả tiền mặt tờ 50k dư, điều chỉnh tiền thối'
+    })
+  });
+  assert(cashUpdateRes.status === 200, 'Successfully updated payment method back to CASH with adjusted amount');
+  assert(cashUpdateRes.data.data.payment_method === 'CASH', 'Payment method is now CASH');
+  assert(parseFloat(cashUpdateRes.data.data.amount_paid) === cashAdjustAmount, `Customer paid amount updated to: ${cashAdjustAmount}`);
+  assert(parseFloat(cashUpdateRes.data.data.change_amount) === 50000, 'Calculated change amount is exactly 50,000 đ');
+
+  // 17.5 Verify audit log was recorded
+  const auditLogsRes = await request(`/invoices/${testInv.id}`, {
+    headers: { Authorization: `Bearer ${adminToken}` }
+  });
+  const paymentAudit = auditLogsRes.data.data.audit_logs?.find(a => a.action === 'UPDATE_INVOICE_PAYMENT');
+  assert(paymentAudit !== undefined, 'Audit log correctly recorded UPDATE_INVOICE_PAYMENT action');
+  assert(paymentAudit?.reason?.includes('tiền thối') || paymentAudit?.reason?.includes('chuyển khoản'), 'Audit log includes clear explanation reason');
 
   console.log('\n====================================================');
   console.log(` TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
