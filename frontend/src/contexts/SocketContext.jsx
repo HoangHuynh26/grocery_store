@@ -25,7 +25,18 @@ export function SocketProvider({ children }) {
       if (import.meta.env.VITE_API_URL) {
         return import.meta.env.VITE_API_URL.trim().replace(/\/+$/, '').replace(/\/api$/, '');
       }
-      return '/';
+
+      // Khi chạy local, proxy qua '/' của Vite
+      if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+        if (isLocalhost) {
+          return '/';
+        }
+      }
+
+      // Khi chạy public, kết nối trực tiếp gateway Render
+      return 'https://grocery-pos-backend.onrender.com';
     };
 
     const socketEndpoint = getSocketEndpoint();

@@ -1,11 +1,30 @@
 import axios from 'axios';
 
-// Clean & normalize API URL: handles https://domain.onrender.com, https://domain.onrender.com/api, trailing slashes, or relative /api
+// Public Cloud Deployment URLs
+export const PUBLIC_BACKEND_URL = 'https://grocery-pos-backend.onrender.com';
+export const PUBLIC_FRONTEND_URL = 'https://grocery-store-app.vercel.app';
+
+// Smart Dual-Mode API URL:
+// - Chạy Localhost (localhost/127.0.0.1): tự động dùng '/api' (Vite proxy sang http://localhost:5000)
+// - Chạy Public (Vercel hoặc cloud): tự động kết nối Backend Render công khai
 function getBaseUrl() {
   const envUrl = import.meta.env.VITE_API_URL;
-  if (!envUrl) return '/api';
-  const trimmed = envUrl.trim().replace(/\/+$/, '');
-  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  if (envUrl && envUrl.trim()) {
+    const trimmed = envUrl.trim().replace(/\/+$/, '');
+    return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  }
+
+  // Tự động nhận diện môi trường localhost
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+    if (isLocalhost) {
+      return '/api';
+    }
+  }
+
+  // Khi chạy trên Vercel hoặc public internet
+  return `${PUBLIC_BACKEND_URL}/api`;
 }
 
 const baseURL = getBaseUrl();

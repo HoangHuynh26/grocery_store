@@ -21,13 +21,18 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
 
-    const allowedOrigins = [
+    const rawOrigins = [
       config.corsOrigin,
       process.env.CLIENT_URL,
+      process.env.PUBLIC_FRONTEND_URL,
+      'https://grocery-store-app.vercel.app',
+      'https://grocery-pos-frontend.vercel.app',
       'http://localhost:5173',
       'http://localhost:3000',
       'http://localhost:5000'
     ].filter(Boolean);
+
+    const allowedOrigins = rawOrigins.flatMap(s => typeof s === 'string' ? s.split(',').map(item => item.trim()) : [s]);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);

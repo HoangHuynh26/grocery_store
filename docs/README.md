@@ -4,6 +4,15 @@ Chào mừng bạn đến với bộ tài liệu kỹ thuật chi tiết của h
 
 ---
 
+## 🌐 Đường Dẫn Truy Cập Trực Tuyến (Public Cloud Live Links)
+
+- **Frontend Web App (Vercel)**: [https://grocery-store-app.vercel.app](https://grocery-store-app.vercel.app)
+- **Backend API Gateway (Render)**: [https://grocery-pos-backend.onrender.com](https://grocery-pos-backend.onrender.com)
+- **Kiểm Tra Sức Khỏe API**: [https://grocery-pos-backend.onrender.com/health](https://grocery-pos-backend.onrender.com/health)
+- **Tài khoản dùng thử**: `admin` / `Admin@123` (Super Admin) & `nhanvien1` / `Admin@123` (Thu ngân)
+
+---
+
 ## 📑 Mục Lục Tài Liệu
 
 | STT | File Tài Liệu | Nội Dung Chính |
