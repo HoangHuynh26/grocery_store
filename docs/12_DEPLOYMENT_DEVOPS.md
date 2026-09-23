@@ -104,10 +104,10 @@ Hệ thống cung cấp sẵn file [database.sql](file:///c:/grocery_store/backe
 
 ---
 
-## 5. Tài Khoản Quản Trị Mặc Định
+## 5. Tài Khoản Quản Trị Mặc Định (Mật khẩu: Admin@123)
 
-- **Super Admin**: `admin` / `Admin@123456`
-- **Thu ngân**: `nhanvien1` / `Staff@123456`
+- **Super Admin**: `admin` hoặc `admin@grocerystore.vn` / Mật khẩu: `Admin@123`
+- **Thu ngân**: `nhanvien1` hoặc `staff1@grocerystore.vn` / Mật khẩu: `Admin@123`
 
 ---
 

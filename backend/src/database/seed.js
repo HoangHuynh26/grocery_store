@@ -17,9 +17,9 @@ async function seedDatabase() {
 
   console.log('[Seed] Seeding default accounts, categories, products, and historical data...');
 
-  // Create Super Admin & Admin users
-  const adminPass = await hashPassword('Admin@123456');
-  const staffPass = await hashPassword('Staff@123456');
+  // Create Super Admin & Admin users (Password: Admin@123)
+  const adminPass = await hashPassword('Admin@123');
+  const staffPass = await hashPassword('Admin@123');
 
   const superAdminRes = await query(`
     INSERT INTO users (username, email, password_hash, full_name, phone, role, is_active, created_at, updated_at)

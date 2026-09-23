@@ -66,10 +66,10 @@ export default function LoginPage() {
   const fillCredentials = (userType) => {
     if (userType === 'admin') {
       setIdentifier('admin');
-      setPassword('Admin@123456');
+      setPassword('Admin@123');
     } else {
       setIdentifier('nhanvien1');
-      setPassword('Staff@123456');
+      setPassword('Admin@123');
     }
     setError('');
   };

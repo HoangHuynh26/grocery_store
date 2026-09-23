@@ -38,8 +38,8 @@ async function startServer() {
     server.listen(config.port, '0.0.0.0', () => {
       console.log(`[Server] Backend API listening on 0.0.0.0:${config.port} (http://localhost:${config.port})`);
       console.log(`[Server] Socket.IO endpoint active.`);
-      console.log(`[Auth] Default Super Admin: admin / Admin@123456`);
-      console.log(`[Auth] Default Cashier Admin: nhanvien1 / Staff@123456`);
+      console.log(`[Auth] Default Super Admin: admin / Admin@123`);
+      console.log(`[Auth] Default Cashier Admin: nhanvien1 / Admin@123`);
       console.log('====================================================');
 
       // 5. Activate 12:00 AM Midnight Daily Product Embedding Scheduler

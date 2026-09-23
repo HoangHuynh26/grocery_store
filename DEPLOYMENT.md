@@ -86,7 +86,7 @@ Tài liệu hướng dẫn chi tiết từng bước đưa hệ thống **Grocer
 
 ## 4. Tài Khoản Quản Trị Mặc Định Sau Khi Triển Khai
 
-| Tài Khoản | Mật Khẩu | Quyền Hạn |
+| Tài Khoản / Email | Mật Khẩu | Quyền Hạn |
 |:---|:---|:---|
-| `admin` | `Admin@123456` | **Super Admin**: Toàn quyền cấu hình, nhân viên, điều chỉnh hóa đơn, xem báo cáo & kiểm toán |
-| `nhanvien1` | `Staff@123456` | **Thu ngân**: Thao tác bán hàng POS, quét mã QR, in hóa đơn, kiểm tra tồn kho |
+| `admin` (`admin@grocerystore.vn`) | `Admin@123` | **Super Admin**: Toàn quyền cấu hình, nhân viên, điều chỉnh hóa đơn, xem báo cáo & kiểm toán |
+| `nhanvien1` (`staff1@grocerystore.vn`) | `Admin@123` | **Thu ngân**: Thao tác bán hàng POS, quét mã QR, in hóa đơn, kiểm tra tồn kho |

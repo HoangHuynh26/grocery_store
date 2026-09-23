@@ -48,20 +48,35 @@ async function runTests() {
   });
   assert(failLogin.status === 401 && failLogin.data.error.code === 'INVALID_CREDENTIALS', 'Reject wrong password');
 
-  // Successful Super Admin login
+  // Successful Super Admin login with username
   const adminLogin = await request('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ identifier: 'admin', password: 'Admin@123456' })
+    body: JSON.stringify({ identifier: 'admin', password: 'Admin@123' })
   });
-  assert(adminLogin.status === 200 && adminLogin.data.data.user.role === 'SUPER_ADMIN', 'Super Admin login success');
+  assert(adminLogin.status === 200 && adminLogin.data.data.user.role === 'SUPER_ADMIN', 'Super Admin login success (username: admin / Admin@123)');
   const adminToken = adminLogin.data.data.accessToken;
 
+  // Successful Super Admin login with email
+  const adminEmailLogin = await request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ identifier: 'admin@grocerystore.vn', password: 'Admin@123' })
+  });
+  assert(adminEmailLogin.status === 200 && adminEmailLogin.data.data.user.role === 'SUPER_ADMIN', 'Super Admin login success (email: admin@grocerystore.vn / Admin@123)');
+
+  // Successful Cashier Admin login with username
   const staffLogin = await request('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ identifier: 'nhanvien1', password: 'Staff@123456' })
+    body: JSON.stringify({ identifier: 'nhanvien1', password: 'Admin@123' })
   });
-  assert(staffLogin.status === 200 && staffLogin.data.data.user.role === 'ADMIN', 'Cashier Admin login success');
+  assert(staffLogin.status === 200 && staffLogin.data.data.user.role === 'ADMIN', 'Cashier Admin login success (username: nhanvien1 / Admin@123)');
   const staffToken = staffLogin.data.data.accessToken;
+
+  // Successful Cashier Admin login with email
+  const staffEmailLogin = await request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ identifier: 'staff1@grocerystore.vn', password: 'Admin@123' })
+  });
+  assert(staffEmailLogin.status === 200 && staffEmailLogin.data.data.user.role === 'ADMIN', 'Cashier Admin login success (email: staff1@grocerystore.vn / Admin@123)');
 
   // TEST 2B: Client IP & Geolocation Detection
   console.log('\n[2B] Testing IP Extraction & Geolocation in Login Logs...');
@@ -72,7 +87,7 @@ async function runTests() {
     headers: {
       'X-Forwarded-For': '14.226.12.34, 10.0.0.1'
     },
-    body: JSON.stringify({ identifier: 'admin', password: 'Admin@123456' })
+    body: JSON.stringify({ identifier: 'admin', password: 'Admin@123' })
   });
   assert(
     proxyLogin.status === 200 &&
