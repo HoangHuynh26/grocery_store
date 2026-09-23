@@ -1,8 +1,14 @@
 import axios from 'axios';
 
-// When deployed on Vercel, can point directly to Render backend URL (e.g. https://grocery-backend.onrender.com/api)
-// or use relative '/api' with Vercel rewrites.
-const baseURL = import.meta.env.VITE_API_URL || '/api';
+// Clean & normalize API URL: handles https://domain.onrender.com, https://domain.onrender.com/api, trailing slashes, or relative /api
+function getBaseUrl() {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) return '/api';
+  const trimmed = envUrl.trim().replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+}
+
+const baseURL = getBaseUrl();
 
 const api = axios.create({
   baseURL,
@@ -34,7 +40,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/login')) {
       originalRequest._retry = true;
       try {
-        const refreshRes = await axios.post(`${baseURL}/auth/refresh`, {}, { withCredentials: true });
+        const storedRefreshToken = localStorage.getItem('grocery_refresh_token');
+        const refreshRes = await axios.post(`${baseURL}/auth/refresh`, {
+          refreshToken: storedRefreshToken
+        }, { withCredentials: true });
         if (refreshRes.data?.data?.accessToken) {
           const newToken = refreshRes.data.data.accessToken;
           localStorage.setItem('grocery_access_token', newToken);
@@ -43,6 +52,7 @@ api.interceptors.response.use(
         }
       } catch (refreshErr) {
         localStorage.removeItem('grocery_access_token');
+        localStorage.removeItem('grocery_refresh_token');
         localStorage.removeItem('grocery_user');
         window.location.href = '/login';
         return Promise.reject(refreshErr);

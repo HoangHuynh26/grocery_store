@@ -22,3 +22,10 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false # Nhập chuỗi kết nối Neon PostgreSQL của bạn tại đây: postgresql://user:pass@ep-xyz.neon.tech/neondb?sslmode=require
+      - key: CLIENT_URL
+        sync: false # URL Frontend Vercel của bạn (ví dụ: https://ten-ung-dung.vercel.app)
+      - key: CORS_ORIGIN
+        sync: false # Tùy chọn: URL Frontend CORS (ví dụ: https://ten-ung-dung.vercel.app)
+      - key: GEMINI_API_KEY
+        sync: false # Tùy chọn: Google Gemini API Key để kích hoạt AI Assistant & AI Vision
+

@@ -13,6 +13,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@langchain/core": "^1.2.12",

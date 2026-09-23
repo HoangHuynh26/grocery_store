@@ -33,7 +33,7 @@ graph LR
 
 ## 2. Khởi Tạo Cơ Sở Dữ Liệu Neon (https://neon.tech)
 
-Hệ thống cung cấp sẵn file [database.sql](file:///c:/grocery_store/database.sql) độc lập hoàn chỉnh:
+Hệ thống cung cấp sẵn file [database.sql](file:///c:/grocery_store/backend/database.sql) độc lập hoàn chỉnh:
 
 ### Các bước thực hiện:
 1. Đăng ký tài khoản miễn phí tại [Neon.tech](https://neon.tech).
@@ -56,24 +56,34 @@ Hệ thống cung cấp sẵn file [database.sql](file:///c:/grocery_store/datab
 
 ## 3. Triển Khai Backend Lên Render (https://render.com)
 
+### Cách 1: Sử dụng Render Blueprint (Khuyên dùng - Nhanh nhất)
 1. Đăng nhập vào [Render Dashboard](https://dashboard.render.com).
-2. Chọn **New +** -> **Web Service**.
-3. Chọn kho lưu trữ GitHub `HoangHuynh26/grocery_store`.
-4. Cấu hình dịch vụ:
+2. Chọn **New +** -> **Blueprint**.
+3. Kết nối kho GitHub `HoangHuynh26/grocery_store`.
+4. Render sẽ tự động đọc file `render.yaml` ở thư mục gốc và chuẩn bị toàn bộ cấu hình.
+5. Điền giá trị cho các biến môi trường được yêu cầu (đặc biệt là `DATABASE_URL` từ Neon).
+6. Nhấn **Apply**.
+
+### Cách 2: Tạo Thủ Công Web Service
+1. Chọn **New +** -> **Web Service**.
+2. Chọn kho lưu trữ GitHub `HoangHuynh26/grocery_store`.
+3. Cấu hình dịch vụ:
    - **Name**: `grocery-pos-backend`
    - **Root Directory**: `backend`
    - **Runtime**: `Node`
    - **Build Command**: `npm install`
    - **Start Command**: `npm start`
-5. **Cấu hình Biến Môi Trường (Environment Variables)**:
+   - **Health Check Path**: `/api/health` hoặc `/health`
+4. **Cấu hình Biến Môi Trường (Environment Variables)**:
    | Tên Biến Môi Trường | Giá Trị Mẫu | Mô Tả |
    |:---|:---|:---|
-   | `NODE_ENV` | `production` | Bật chế độ tối ưu hiệu năng Node.js |
-   | `PORT` | `5000` | Cổng dịch vụ lắng nghe |
+   | `NODE_ENV` | `production` | Bật chế độ tối ưu hiệu năng Node.js & cookie bảo mật |
+   | `PORT` | `5000` | Render tự động cấp hoặc để 5000 (Backend lắng nghe trên 0.0.0.0) |
    | `DATABASE_URL` | *(Dán chuỗi kết nối Neon)* | Chuỗi kết nối PostgreSQL từ Neon Console |
    | `JWT_SECRET` | *(Chuỗi ngẫu nhiên 64 ký tự)* | Khóa bí mật ký Access Token |
    | `REFRESH_TOKEN_SECRET` | *(Chuỗi ngẫu nhiên 64 ký tự)* | Khóa bí mật ký Refresh Token |
-   | `CLIENT_URL` | `https://ten-du-an-cua-ban.vercel.app` | URL Frontend trên Vercel để cấu hình CORS |
+   | `CLIENT_URL` | `https://ten-du-an.vercel.app` | URL Frontend trên Vercel để cấu hình CORS |
+   | `GEMINI_API_KEY` | *(Khóa API từ Google AI Studio)* | Kích hoạt AI Trợ lý kinh doanh, Voice & Vision |
 
 ---
 
@@ -81,13 +91,15 @@ Hệ thống cung cấp sẵn file [database.sql](file:///c:/grocery_store/datab
 
 1. Đăng nhập vào [Vercel Dashboard](https://vercel.com).
 2. Nhấn **Add New...** -> **Project** -> Chọn kho GitHub `HoangHuynh26/grocery_store`.
-3. Cấu hình:
-   - **Root Directory**: Chọn `frontend`.
+3. Cấu hình dự án:
+   - **Root Directory**: Chọn `frontend` (hoặc để mặc định `./` vì đã có sẵn file `vercel.json` ở root hỗ trợ).
    - **Framework Preset**: `Vite`.
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
-4. Cấu hình Biến môi trường:
-   - `VITE_API_URL`: Điền URL Backend Render kèm `/api` (ví dụ: `https://grocery-pos-backend.onrender.com/api`).
+4. **Cấu hình Biến Môi Trường (Environment Variables)**:
+   | Tên Biến Môi Trường | Giá Trị Mẫu | Mô Tả |
+   |:---|:---|:---|
+   | `VITE_API_URL` | `https://grocery-pos-backend.onrender.com/api` | URL Backend Render (hỗ trợ có hoặc không có `/api`) |
 5. Nhấn **Deploy**.
 
 ---
@@ -96,3 +108,21 @@ Hệ thống cung cấp sẵn file [database.sql](file:///c:/grocery_store/datab
 
 - **Super Admin**: `admin` / `Admin@123456`
 - **Thu ngân**: `nhanvien1` / `Staff@123456`
+
+---
+
+## 6. Các Điểm Tối Ưu Hóa Kỹ Thuật Đã Áp Dụng Cho Vercel & Render
+
+1. **CORS Linh Hoạt & An Toàn**:
+   - Backend tự động nhận diện tất cả các tên miền con của Vercel (`*.vercel.app`) bao gồm cả Preview Deployments và Production Domain.
+   - Hỗ trợ đầy đủ `credentials: true` và preflight `OPTIONS` requests.
+2. **Cross-Site Cookies & Fallback Token Refresh**:
+   - Trên môi trường `production`, cookie refresh token được gắn cờ `sameSite: 'none'` và `secure: true`.
+   - Bổ sung cơ chế dự phòng truyền `refreshToken` qua request body nếu trình duyệt của người dùng kích hoạt chặn cookie bên thứ ba (như Safari ITP hoặc Chrome Incognito).
+3. **Chuẩn Hóa URL Tự Động (Foolproof URL Normalizer)**:
+   - Frontend tự động phát hiện và thêm đuôi `/api` chuẩn xác dù người dùng điền `https://xyz.onrender.com` hay `https://xyz.onrender.com/api/`.
+4. **Realtime WebSockets (Socket.IO Gateway)**:
+   - Socket client tự động kết nối trực tiếp đến backend Render thông qua URL trích xuất từ `VITE_API_URL`, hỗ trợ chuyển đổi mượt mà giữa WebSocket và Polling.
+5. **Cấu Hình Root Fallback Vercel (`vercel.json`)**:
+   - Cho phép người dùng deploy trực tiếp từ root repository mà không bị lỗi thiếu file build hoặc sai thư mục đầu ra.
+

@@ -34,9 +34,9 @@ async function startServer() {
 
     initSocket(io);
 
-    // 4. Start listening
-    server.listen(config.port, () => {
-      console.log(`[Server] Backend API listening on port ${config.port} (http://localhost:${config.port})`);
+    // 4. Start listening (bind 0.0.0.0 for cloud container compatibility on Render/Fly)
+    server.listen(config.port, '0.0.0.0', () => {
+      console.log(`[Server] Backend API listening on 0.0.0.0:${config.port} (http://localhost:${config.port})`);
       console.log(`[Server] Socket.IO endpoint active.`);
       console.log(`[Auth] Default Super Admin: admin / Admin@123456`);
       console.log(`[Auth] Default Cashier Admin: nhanvien1 / Staff@123456`);

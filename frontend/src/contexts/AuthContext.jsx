@@ -46,6 +46,7 @@ export function AuthProvider({ children }) {
         setUser(null);
         setClientLocation(null);
         localStorage.removeItem('grocery_access_token');
+        localStorage.removeItem('grocery_refresh_token');
         localStorage.removeItem('grocery_user');
         localStorage.removeItem('grocery_client_location');
       } finally {
@@ -58,8 +59,11 @@ export function AuthProvider({ children }) {
 
   const login = async (identifier, password) => {
     const res = await api.post('/auth/login', { identifier, password });
-    const { user: authUser, accessToken, clientLocation: loc } = res.data;
+    const { user: authUser, accessToken, refreshToken, clientLocation: loc } = res.data;
     localStorage.setItem('grocery_access_token', accessToken);
+    if (refreshToken) {
+      localStorage.setItem('grocery_refresh_token', refreshToken);
+    }
     localStorage.setItem('grocery_user', JSON.stringify(authUser));
     setUser(authUser);
     if (loc) {
@@ -76,6 +80,7 @@ export function AuthProvider({ children }) {
       // Ignore
     } finally {
       localStorage.removeItem('grocery_access_token');
+      localStorage.removeItem('grocery_refresh_token');
       localStorage.removeItem('grocery_user');
       localStorage.removeItem('grocery_client_location');
       setUser(null);

@@ -20,11 +20,19 @@ export function SocketProvider({ children }) {
     }
 
     // Determine socket endpoint: direct URL from env (Render backend URL) or relative path
-    const socketEndpoint = import.meta.env.VITE_SOCKET_URL ||
-      (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '') : '/');
+    const getSocketEndpoint = () => {
+      if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL.trim().replace(/\/+$/, '');
+      if (import.meta.env.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL.trim().replace(/\/+$/, '').replace(/\/api$/, '');
+      }
+      return '/';
+    };
+
+    const socketEndpoint = getSocketEndpoint();
 
     const newSocket = io(socketEndpoint, {
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      withCredentials: true
     });
 
     newSocket.on('connect', () => {

@@ -16,17 +16,35 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-// CORS configuration
+// CORS configuration: support Vercel domains, localhost, LAN IPs, and custom domains
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow localhost or undefined (e.g. curl/mobile apps/same origin)
-    if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      callback(null, true);
-    } else {
-      callback(null, true); // Permissive in dev, adjust as needed
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      config.corsOrigin,
+      process.env.CLIENT_URL,
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:5000'
+    ].filter(Boolean);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
+
+    try {
+      const parsed = new URL(origin);
+      if (parsed.hostname.endsWith('.vercel.app') || parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+        return callback(null, true);
+      }
+    } catch (e) {}
+
+    return callback(null, true);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-idempotency-key', 'X-Forwarded-For']
 }));
 
 // Body parsing with limits
@@ -41,6 +59,17 @@ if (config.nodeEnv !== 'test') {
 
 // Rate limiting for API requests
 app.use('/api', apiLimiter);
+
+// Root & Health Check for Cloud Load Balancers & Render
+app.get(['/', '/health'], (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    system: 'Grocery Store Management & POS System Backend',
+    version: '1.0.0',
+    environment: config.nodeEnv,
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Serve uploads if any
 const uploadDir = path.join(__dirname, '../uploads');

@@ -110,11 +110,12 @@ class AuthController {
         userAgent
       });
 
-      // Set cookie for refresh token
+      // Set cookie for refresh token (support cross-site cookies between Vercel & Render)
+      const isProduction = process.env.NODE_ENV === 'production';
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000
       });
 
@@ -195,7 +196,12 @@ class AuthController {
         });
       }
 
-      res.clearCookie('refreshToken');
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax'
+      });
       return res.status(200).json({
         success: true,
         message: 'Đăng xuất thành công.'

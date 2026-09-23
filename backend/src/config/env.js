@@ -10,7 +10,7 @@ const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
   refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET || 'super_secret_grocery_refresh_key_2026_secure_random',
   refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  corsOrigin: process.env.CORS_ORIGIN || process.env.CLIENT_URL || 'http://localhost:5173',
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   momo: {
     partnerCode: process.env.MOMO_PARTNER_CODE || '',
