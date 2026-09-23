@@ -84,6 +84,25 @@ Tài liệu hướng dẫn chi tiết từng bước đưa hệ thống **Grocer
 
 ---
 
+## 3B. Triển Khai Frontend Lên Netlify (https://netlify.com)
+
+1. Đăng nhập vào [Netlify Dashboard](https://app.netlify.com).
+2. Chọn **Add new site** -> **Import an existing project**.
+3. Kết nối với tài khoản GitHub và chọn repo `HoangHuynh26/grocery_store`.
+4. **Cấu hình Build Settings** (Netlify tự động đọc file `netlify.toml` có sẵn ở root):
+   - **Base directory**: `frontend`
+   - **Build command**: `npm run build`
+   - **Publish directory**: `dist`
+5. **Environment Variables**:
+   - Thêm biến `VITE_API_URL` với giá trị là URL Backend Render:
+     ```text
+     https://grocery-pos-backend.onrender.com/api
+     ```
+6. Bấm **Deploy grocery-store**.
+7. File `_redirects` và `netlify.toml` đã được tạo sẵn bảo đảm các route React Router (`/pos`, `/invoices`, `/ai-assistant`) không bao giờ bị lỗi 404 khi người dùng tải lại trang!
+
+---
+
 ## 4. Tài Khoản Quản Trị Mặc Định Sau Khi Triển Khai
 
 | Tài Khoản / Email | Mật Khẩu | Quyền Hạn |

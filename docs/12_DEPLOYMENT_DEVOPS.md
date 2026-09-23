@@ -104,6 +104,24 @@ Hệ thống cung cấp sẵn file [database.sql](file:///c:/grocery_store/backe
 
 ---
 
+## 4B. Triển Khai Frontend Lên Netlify (https://netlify.com)
+
+1. Đăng nhập vào [Netlify Dashboard](https://app.netlify.com).
+2. Nhấn **Add new site** -> Chọn **Import an existing project**.
+3. Kết nối với kho GitHub `HoangHuynh26/grocery_store`.
+4. Cấu hình tự động thông qua file `netlify.toml` có sẵn:
+   - **Base directory**: `frontend`
+   - **Build command**: `npm run build`
+   - **Publish directory**: `dist`
+5. **Cấu hình Biến Môi Trường (Site configuration -> Environment variables)**:
+   | Tên Biến Môi Trường | Giá Trị Mẫu | Mô Tả |
+   |:---|:---|:---|
+   | `VITE_API_URL` | `https://grocery-pos-backend.onrender.com/api` | URL Backend Render |
+6. Nhấn **Deploy grocery-store**.
+7. Hệ thống đã tích hợp sẵn file `frontend/public/_redirects` và `netlify.toml`, bảo đảm toàn bộ SPA routing không bao giờ bị lỗi 404 khi làm mới trang!
+
+---
+
 ## 5. Tài Khoản Quản Trị Mặc Định (Mật khẩu: Admin@123)
 
 - **Super Admin**: `admin` hoặc `admin@grocerystore.vn` / Mật khẩu: `Admin@123`

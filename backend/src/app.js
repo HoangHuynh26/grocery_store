@@ -27,6 +27,8 @@ app.use(cors({
       process.env.PUBLIC_FRONTEND_URL,
       'https://grocery-store-app.vercel.app',
       'https://grocery-pos-frontend.vercel.app',
+      'https://grocery-pos-frontend.netlify.app',
+      'https://grocery-store-app.netlify.app',
       'http://localhost:5173',
       'http://localhost:3000',
       'http://localhost:5000'
@@ -40,7 +42,7 @@ app.use(cors({
 
     try {
       const parsed = new URL(origin);
-      if (parsed.hostname.endsWith('.vercel.app') || parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+      if (parsed.hostname.endsWith('.netlify.app') || parsed.hostname.endsWith('.vercel.app') || parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
         return callback(null, true);
       }
     } catch (e) {}

@@ -1,12 +1,13 @@
 import axios from 'axios';
 
-// Public Cloud Deployment URLs
+// Public Cloud Deployment URLs (Hỗ trợ cả Netlify & Vercel)
 export const PUBLIC_BACKEND_URL = 'https://grocery-pos-backend.onrender.com';
 export const PUBLIC_FRONTEND_URL = 'https://grocery-store-app.vercel.app';
+export const PUBLIC_NETLIFY_URL = 'https://grocery-pos-frontend.netlify.app';
 
 // Smart Dual-Mode API URL:
 // - Chạy Localhost (localhost/127.0.0.1): tự động dùng '/api' (Vite proxy sang http://localhost:5000)
-// - Chạy Public (Vercel hoặc cloud): tự động kết nối Backend Render công khai
+// - Chạy Public (Netlify, Vercel hoặc cloud): tự động kết nối Backend Render công khai
 function getBaseUrl() {
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl && envUrl.trim()) {
