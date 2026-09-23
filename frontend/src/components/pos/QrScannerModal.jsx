@@ -9,8 +9,6 @@ import api from '../../services/api';
 import { playScanBeep } from '../../utils/scannerAudio';
 
 export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
-  // Mode: 'barcode' (Siêu Tốc Full-Frame) or 'vision' (AI Nhận Diện Bao Bì)
-  const [scanMode, setScanMode] = useState('barcode');
   const [error, setError] = useState('');
   const [scanning, setScanning] = useState(false);
   const [manualCode, setManualCode] = useState('');
@@ -25,8 +23,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
   const [analyzingVision, setAnalyzingVision] = useState(false);
   const [visionCandidate, setVisionCandidate] = useState(null);
   const [visionInsight, setVisionInsight] = useState('');
-  const [allCandidates, setAllCandidates] = useState([]);
-  const [autoVision, setAutoVision] = useState(false);
+  const [autoVision, setAutoVision] = useState(true);
 
   const scannerRef = useRef(null);
   const lastCodeRef = useRef({ code: '', time: 0 });
@@ -40,8 +37,8 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
     const trimmed = code.trim();
     const now = Date.now();
 
-    // Prevent double-scan of identical barcode within 1.2s
-    if (lastCodeRef.current.code === trimmed && now - lastCodeRef.current.time < 1200) {
+    // Prevent double-scan of identical barcode within 1.4s
+    if (lastCodeRef.current.code === trimmed && now - lastCodeRef.current.time < 1400) {
       return;
     }
 
@@ -50,7 +47,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
 
     try {
       setError('');
-      // Query backend (which checks both qr_code_token, product_code, and id)
+      // Query backend (which checks qr_code_token, product_code, and id)
       const res = await api.get(`/products/qr/${encodeURIComponent(trimmed)}`);
       const product = res.data?.data || res.data;
 
@@ -58,7 +55,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
         playScanBeep(true);
         onProductFound(product);
         setScannedCount((prev) => prev + 1);
-        setLastScannedProduct(product);
+        setLastScannedProduct({ ...product, scanSource: 'Mã Vạch / QR Code' });
         setVisionCandidate(null);
 
         if (!continuousMode) {
@@ -79,7 +76,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
     } finally {
       setTimeout(() => {
         isProcessingRef.current = false;
-      }, 400);
+      }, 500);
     }
   }, [continuousMode, onClose, onProductFound]);
 
@@ -103,13 +100,14 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
     }
   };
 
-  // Trigger Vision AI Product Recognition
-  const handleAnalyzeVision = async () => {
-    if (analyzingVision) return;
+  // Trigger Vision AI Product Recognition (Integrated directly with camera stream)
+  const handleAnalyzeVision = useCallback(async (isManualTrigger = false) => {
+    if (analyzingVision || isProcessingRef.current) return;
     const imageBase64 = captureVideoFrame();
+    if (!imageBase64) return;
 
     setAnalyzingVision(true);
-    setError('');
+    if (isManualTrigger) setError('');
 
     try {
       const res = await api.post('/ai/recognize-product-image', {
@@ -120,32 +118,42 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
       const data = res.data?.data || res.data;
       if (data && data.product) {
         const prod = data.product;
+        const now = Date.now();
+
+        // Prevent immediate duplicate if identical product was just scanned within 1.5s
+        if (lastCodeRef.current.code === prod.product_code && now - lastCodeRef.current.time < 1500) {
+          return;
+        }
+        lastCodeRef.current = { code: prod.product_code, time: now };
+
         playScanBeep(true);
         setVisionCandidate(prod);
         setVisionInsight(data.visualInsights || 'Nhận diện thành công qua đặc trưng bao bì.');
-        setAllCandidates(data.allCandidates || []);
 
         // Auto add to cart
         onProductFound(prod);
         setScannedCount((prev) => prev + 1);
-        setLastScannedProduct(prod);
+        setLastScannedProduct({ ...prod, scanSource: 'Bao Bì Sản Phẩm (AI)' });
+        setError('');
 
         if (!continuousMode) {
           setTimeout(() => {
             onClose();
           }, 800);
         }
-      } else {
+      } else if (isManualTrigger) {
         playScanBeep(false);
         setError('Chưa nhận diện rõ bao bì. Vui lòng đưa sản phẩm lại gần hoặc quét mã vạch.');
       }
     } catch (err) {
-      playScanBeep(false);
-      setError(err?.response?.data?.error?.message || err?.message || 'Lỗi nhận diện thị giác AI.');
+      if (isManualTrigger) {
+        playScanBeep(false);
+        setError(err?.response?.data?.error?.message || err?.message || 'Lỗi nhận diện thị giác AI.');
+      }
     } finally {
       setAnalyzingVision(false);
     }
-  };
+  }, [analyzingVision, continuousMode, onClose, onProductFound]);
 
   // Start HTML5-QRCode with Full-Frame Scanning & High FPS
   useEffect(() => {
@@ -197,7 +205,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
                 aspectRatio: 1.0
               },
               async (decodedText) => {
-                // If in barcode mode, or anytime a barcode is visible
+                // Simultaneously catches any barcode or QR code in frame
                 handleCodeDetected(decodedText);
               },
               () => {
@@ -235,21 +243,21 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
     }
   }, [isOpen, handleCodeDetected]);
 
-  // Auto-Vision periodic scanner (if user enables Auto Vision)
+  // Integrated Auto-Vision periodic scanner: Runs alongside barcode scanner on the same video feed!
   useEffect(() => {
-    if (scanMode === 'vision' && autoVision && isOpen) {
+    if (autoVision && isOpen && scanning) {
       autoVisionTimerRef.current = setInterval(() => {
         if (!analyzingVision && !isProcessingRef.current) {
-          handleAnalyzeVision();
+          handleAnalyzeVision(false);
         }
-      }, 2500);
+      }, 2200);
     } else {
       if (autoVisionTimerRef.current) clearInterval(autoVisionTimerRef.current);
     }
     return () => {
       if (autoVisionTimerRef.current) clearInterval(autoVisionTimerRef.current);
     };
-  }, [scanMode, autoVision, isOpen, analyzingVision]);
+  }, [autoVision, isOpen, scanning, analyzingVision, handleAnalyzeVision]);
 
   // Manual fallback search
   const handleManualSearch = async (e) => {
@@ -268,7 +276,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
           playScanBeep(true);
           onProductFound(prod);
           setScannedCount((prev) => prev + 1);
-          setLastScannedProduct(prod);
+          setLastScannedProduct({ ...prod, scanSource: 'Nhập Mã SKU Thủ Công' });
           setManualCode('');
           if (!continuousMode) onClose();
           return;
@@ -281,7 +289,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
         playScanBeep(true);
         onProductFound(prod);
         setScannedCount((prev) => prev + 1);
-        setLastScannedProduct(prod);
+        setLastScannedProduct({ ...prod, scanSource: 'Nhập Mã SKU Thủ Công' });
         setManualCode('');
         if (!continuousMode) onClose();
       } else {
@@ -297,69 +305,40 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Hệ Thống Quét Sản Phẩm Thông Minh Kép">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <Modal isOpen={isOpen} onClose={onClose} title="Quét Sản Phẩm Tích Hợp (Mã Vạch, QR & Bao Bì AI)">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         
-        {/* Dual Mode Switcher Tab Bar */}
+        {/* Integrated Engine Status Header Badge */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           backgroundColor: 'var(--bg-card-secondary)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '4px',
-          gap: '4px'
+          border: '1px solid var(--border-color)',
+          borderRadius: 'var(--radius-md)',
+          padding: '8px 14px',
+          fontSize: '12.5px'
         }}>
-          <button
-            type="button"
-            onClick={() => setScanMode('barcode')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '10px 14px',
-              borderRadius: 'var(--radius-md)',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: '13px',
-              transition: 'all 0.2s ease',
-              backgroundColor: scanMode === 'barcode' ? 'var(--primary)' : 'transparent',
-              color: scanMode === 'barcode' ? '#ffffff' : 'var(--text-secondary)',
-              boxShadow: scanMode === 'barcode' ? '0 2px 8px rgba(16, 185, 129, 0.25)' : 'none'
-            }}
-          >
-            <Zap size={16} />
-            <span>⚡ Mã Vạch Siêu Tốc</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{
+              width: '9px',
+              height: '9px',
+              borderRadius: '50%',
+              backgroundColor: '#10b981',
+              boxShadow: '0 0 8px #10b981',
+              display: 'inline-block'
+            }} />
+            <strong style={{ color: 'var(--text-primary)' }}>Chế Độ Tích Hợp Song Song:</strong>
+            <span style={{ color: 'var(--primary)', fontWeight: 600 }}>Mã Vạch 1D + QR Code + Bao Bì AI</span>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setScanMode('vision')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '10px 14px',
-              borderRadius: 'var(--radius-md)',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: '13px',
-              transition: 'all 0.2s ease',
-              backgroundColor: scanMode === 'vision' ? 'linear-gradient(135deg, #3b82f6, #6366f1)' : (scanMode === 'vision' ? 'var(--primary)' : 'transparent'),
-              background: scanMode === 'vision' ? 'linear-gradient(135deg, #059669, #10b981)' : 'transparent',
-              color: scanMode === 'vision' ? '#ffffff' : 'var(--text-secondary)',
-              boxShadow: scanMode === 'vision' ? '0 2px 8px rgba(16, 185, 129, 0.25)' : 'none'
-            }}
-          >
-            <Eye size={16} />
-            <span>👁️ AI Nhận Diện Bao Bì</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+            <Sparkles size={13} color="var(--primary)" />
+            <span>Tự Động Nhận Diện</span>
+          </div>
         </div>
 
-        {/* Live scanner viewport with high-tech HUD overlays */}
+        {/* Live scanner viewport with integrated high-tech HUD */}
         <div style={{
           position: 'relative',
           backgroundColor: '#050811',
@@ -370,7 +349,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          border: scanMode === 'vision' ? '2px solid rgba(16, 185, 129, 0.4)' : '2px solid rgba(59, 130, 246, 0.3)',
+          border: '2px solid rgba(16, 185, 129, 0.4)',
           boxShadow: '0 8px 30px rgba(0, 0, 0, 0.45)'
         }}>
           {/* Real camera feed */}
@@ -384,7 +363,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            padding: '16px',
+            padding: '14px',
             zIndex: 4
           }}>
             {/* Top Status & Tip */}
@@ -392,13 +371,13 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              backgroundColor: 'rgba(15, 23, 42, 0.8)',
               backdropFilter: 'blur(8px)',
               borderRadius: 'var(--radius-md)',
               padding: '6px 12px',
               color: '#ffffff',
               fontSize: '12px',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              border: '1px solid rgba(255, 255, 255, 0.12)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{
@@ -409,20 +388,30 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
                   boxShadow: '0 0 8px #22c55e',
                   display: 'inline-block'
                 }} />
-                <strong>{scanMode === 'barcode' ? 'Mã Vạch Toàn Màn Hình' : 'Thị Giác AI Nhận Diện'}</strong>
+                <strong>Camera Đang Hoạt Động (25 FPS)</strong>
               </div>
-              <span style={{ color: '#cbd5e1', fontSize: '11px' }}>
-                {scanMode === 'barcode' ? 'Lướt mã qua là nhận ngay' : 'Hướng ống kính vào vỏ hộp / chai'}
-              </span>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {analyzingVision ? (
+                  <span style={{ color: '#86efac', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600 }}>
+                    <RefreshCw size={11} className="animate-spin" />
+                    <span>AI đang phân tích bao bì...</span>
+                  </span>
+                ) : (
+                  <span style={{ color: '#cbd5e1', fontSize: '11px' }}>
+                    Chĩa vào mã vạch, QR hoặc vỏ bao bì
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Center Reticle (HUD Focus Brackets) */}
             <div style={{
               position: 'relative',
-              width: '85%',
+              width: '86%',
               height: '180px',
               margin: '0 auto',
-              border: '1px dashed rgba(255, 255, 255, 0.18)',
+              border: '1px dashed rgba(255, 255, 255, 0.22)',
               borderRadius: '16px',
               display: 'flex',
               alignItems: 'center',
@@ -434,39 +423,37 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
               <div style={{ position: 'absolute', bottom: '-2px', left: '-2px', width: '22px', height: '22px', borderBottom: '3px solid #22c55e', borderLeft: '3px solid #22c55e', borderBottomLeftRadius: '10px' }} />
               <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '22px', height: '22px', borderBottom: '3px solid #22c55e', borderRight: '3px solid #22c55e', borderBottomRightRadius: '10px' }} />
 
-              {/* Animated Laser Scan Line (in Barcode mode) */}
-              {scanMode === 'barcode' && (
-                <div style={{
-                  position: 'absolute',
-                  width: '92%',
-                  height: '2px',
-                  background: 'linear-gradient(90deg, transparent, #22c55e, #86efac, #22c55e, transparent)',
-                  boxShadow: '0 0 12px #22c55e',
-                  animation: 'laserScan 1.6s ease-in-out infinite alternate'
-                }} />
-              )}
+              {/* Animated Continuous Laser Scan Line */}
+              <div style={{
+                position: 'absolute',
+                width: '94%',
+                height: '2px',
+                background: 'linear-gradient(90deg, transparent, #22c55e, #86efac, #22c55e, transparent)',
+                boxShadow: '0 0 14px #22c55e',
+                animation: 'laserScan 1.6s ease-in-out infinite alternate'
+              }} />
 
-              {/* Center Guidance in Vision Mode */}
-              {scanMode === 'vision' && (
-                <div style={{
-                  textAlign: 'center',
-                  color: 'rgba(255, 255, 255, 0.85)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.45)',
-                  padding: '6px 14px',
-                  borderRadius: '20px',
-                  fontSize: '11px',
-                  backdropFilter: 'blur(4px)'
-                }}>
-                  {analyzingVision ? '🔍 Đang phân tích bao bì & logo...' : 'Đưa mặt trước sản phẩm vào khung ngắm'}
-                </div>
-              )}
+              {/* Reticle Central Guide Label */}
+              <div style={{
+                position: 'absolute',
+                bottom: '10px',
+                textAlign: 'center',
+                color: 'rgba(255, 255, 255, 0.9)',
+                backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                padding: '4px 12px',
+                borderRadius: '20px',
+                fontSize: '11px',
+                backdropFilter: 'blur(4px)'
+              }}>
+                {analyzingVision ? '🔍 AI đang quét đặc trưng bao bì...' : 'Đưa mã vạch, mã QR hoặc nhãn chai/hộp vào đây'}
+              </div>
             </div>
 
             {/* Bottom Scanned Counter Badge */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               {scannedCount > 0 && (
                 <span style={{
-                  backgroundColor: 'rgba(34, 197, 94, 0.9)',
+                  backgroundColor: 'rgba(34, 197, 94, 0.92)',
                   color: '#ffffff',
                   padding: '4px 14px',
                   borderRadius: '20px',
@@ -474,7 +461,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
                   fontSize: '12px',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                 }}>
-                  Đã thêm {scannedCount} sản phẩm
+                  Đã thêm {scannedCount} sản phẩm vào đơn
                 </span>
               )}
             </div>
@@ -487,7 +474,7 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
               top: '12px',
               left: '12px',
               right: '12px',
-              backgroundColor: 'rgba(22, 101, 52, 0.95)',
+              backgroundColor: 'rgba(22, 101, 52, 0.96)',
               backdropFilter: 'blur(10px)',
               color: '#ffffff',
               padding: '10px 14px',
@@ -497,15 +484,25 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
               justifyContent: 'space-between',
               boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
               zIndex: 10,
-              border: '1px solid rgba(134, 239, 172, 0.3)'
+              border: '1px solid rgba(134, 239, 172, 0.35)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                <CheckCircle size={18} color="#86efac" />
+                <CheckCircle size={18} color="#86efac" style={{ flexShrink: 0 }} />
                 <div style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  Đã thêm: <strong>{lastScannedProduct.name}</strong> (+1)
+                  Đã nhận: <strong>{lastScannedProduct.name}</strong> (+1)
+                  <span style={{
+                    marginLeft: '8px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    backgroundColor: lastScannedProduct.scanSource?.includes('Bao Bì') ? 'rgba(5, 150, 105, 0.8)' : 'rgba(37, 99, 235, 0.8)'
+                  }}>
+                    {lastScannedProduct.scanSource || 'Tích Hợp'}
+                  </span>
                 </div>
               </div>
-              <span style={{ fontSize: '11px', color: '#bbf7d0', flexShrink: 0, marginLeft: '8px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#bbf7d0', flexShrink: 0, marginLeft: '8px' }}>
                 {(lastScannedProduct.selling_price || 0).toLocaleString('vi-VN')} đ
               </span>
             </div>
@@ -519,131 +516,124 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
           )}
         </div>
 
-        {/* Action Panel: Specific to Current Mode */}
-        {scanMode === 'vision' ? (
-          <div style={{
-            backgroundColor: 'var(--bg-card-secondary)',
-            padding: '12px 14px',
-            borderRadius: 'var(--radius-lg)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                Chế độ Nhận diện Bao bì AI
-              </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', margin: 0 }}>
-                <input
-                  type="checkbox"
-                  checked={autoVision}
-                  onChange={(e) => setAutoVision(e.target.checked)}
-                  style={{ accentColor: 'var(--primary)' }}
-                />
-                <span>Tự động quét (2.5s)</span>
-              </label>
-            </div>
-
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={analyzingVision}
-              onClick={handleAnalyzeVision}
-              style={{
-                width: '100%',
-                height: '44px',
-                fontSize: '14px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-              }}
-            >
-              {analyzingVision ? (
-                <>
-                  <RefreshCw size={18} className="animate-spin" />
-                  <span>AI Đang Phân Tích Bao Bì...</span>
-                </>
-              ) : (
-                <>
-                  <Camera size={18} />
-                  <span>📸 Chụp & Nhận Diện Sản Phẩm Ngay</span>
-                </>
-              )}
-            </button>
-
-            {/* Vision Detected Result Banner */}
-            {visionCandidate && (
-              <div style={{
-                backgroundColor: 'var(--primary-light)',
-                borderRadius: 'var(--radius-md)',
-                padding: '10px 12px',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '10px'
-              }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase' }}>
-                    Đã Nhận Diện Thành Công
-                  </div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {visionCandidate.name}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {visionInsight}
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)' }}>
-                    {(visionCandidate.selling_price || 0).toLocaleString('vi-VN')} đ
-                  </div>
-                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                    Tồn: {visionCandidate.stock_quantity} {visionCandidate.unit}
-                  </span>
-                </div>
-              </div>
+        {/* Action Panel: Integrated Controls */}
+        <div style={{
+          backgroundColor: 'var(--bg-card-secondary)',
+          padding: '12px 14px',
+          borderRadius: 'var(--radius-lg)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          {/* Main Integrated Snap Action Button */}
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={analyzingVision}
+            onClick={() => handleAnalyzeVision(true)}
+            style={{
+              width: '100%',
+              height: '44px',
+              fontSize: '14px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
+            }}
+          >
+            {analyzingVision ? (
+              <>
+                <RefreshCw size={18} className="animate-spin" />
+                <span>AI Đang Nhận Diện Bao Bì...</span>
+              </>
+            ) : (
+              <>
+                <Camera size={18} />
+                <span>📸 Chụp & Nhận Diện Bao Bì Ngay</span>
+              </>
             )}
-          </div>
-        ) : (
-          /* Barcode Mode Quick Options */
+          </button>
+
+          {/* Quick Smart Toggles */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            backgroundColor: 'var(--bg-card-secondary)',
-            padding: '8px 14px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '13px'
+            flexWrap: 'wrap',
+            gap: '8px',
+            fontSize: '12.5px',
+            paddingTop: '2px'
           }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none', margin: 0 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
+              <input
+                type="checkbox"
+                checked={autoVision}
+                onChange={(e) => setAutoVision(e.target.checked)}
+                style={{ width: '15px', height: '15px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+              />
+              <span style={{ fontWeight: 600, color: autoVision ? 'var(--primary)' : 'var(--text-secondary)' }}>
+                Tự động quét bao bì AI (2.2s)
+              </span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
               <input
                 type="checkbox"
                 checked={continuousMode}
                 onChange={(e) => setContinuousMode(e.target.checked)}
-                style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                style={{ width: '15px', height: '15px', accentColor: 'var(--primary)', cursor: 'pointer' }}
               />
               <span style={{ fontWeight: 600, color: continuousMode ? 'var(--primary)' : 'var(--text-secondary)' }}>
-                Quét liên tục (Giữ camera mở khi bán nhiều món)
+                Quét liên tục (bán nhiều món)
               </span>
             </label>
-
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
-              Tốc độ 25 FPS
-            </span>
           </div>
-        )}
+
+          {/* Vision Candidate Info if detected by AI */}
+          {visionCandidate && (
+            <div style={{
+              backgroundColor: 'var(--primary-light)',
+              borderRadius: 'var(--radius-md)',
+              padding: '10px 12px',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px'
+            }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase' }}>
+                  ✓ Nhận Diện Bao Bì Thành Công
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {visionCandidate.name}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {visionInsight}
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)' }}>
+                  {(visionCandidate.selling_price || 0).toLocaleString('vi-VN')} đ
+                </div>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                  Tồn: {visionCandidate.stock_quantity} {visionCandidate.unit}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Manual search input fallback */}
         <form onSubmit={handleManualSearch} style={{ display: 'flex', gap: '8px' }}>
           <input
             type="text"
             className="form-control"
-            placeholder="Hoặc nhập/bắn mã SKU (vd: NUOC-COCA-330)..."
+            placeholder="Hoặc nhập/bắn mã SKU (vd: BANH-CHOCORIE-01)..."
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
             style={{ fontSize: '13px' }}
@@ -655,10 +645,10 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
         </form>
 
         {/* Footer info & close button */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '2px' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Sparkles size={14} color="var(--primary)" />
-            <span>Nhận diện tức thì: Barcode 1D, QR 2D và Thị Giác AI</span>
+            <span>Hệ thống tích hợp: Quét mã vạch, mã QR hay hướng bao bì đều nhận diện ngay</span>
           </div>
           <button
             type="button"
@@ -673,8 +663,8 @@ export default function QrScannerModal({ isOpen, onClose, onProductFound }) {
 
       <style>{`
         @keyframes laserScan {
-          0% { top: 12%; }
-          100% { top: 88%; }
+          0% { top: 10%; }
+          100% { top: 90%; }
         }
       `}</style>
     </Modal>

@@ -296,10 +296,10 @@ export default function PosPage() {
                 background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                 boxShadow: '0 4px 12px rgba(16, 185, 129, 0.28)'
               }}
-              title="Quét Camera Kép: Mã Vạch Siêu Tốc & AI Nhận Diện Bao Bì"
+              title="Quét Sản Phẩm Tích Hợp: Nhận diện tự động cả Mã Vạch, QR Code & Bao Bì AI"
             >
               <Camera size={18} />
-              <span style={{ fontWeight: 700, fontSize: '13px' }}>Quét SP & Mã Vạch</span>
+              <span style={{ fontWeight: 700, fontSize: '13px' }}>Quét SP (QR & Bao Bì AI)</span>
             </button>
           </div>
 
