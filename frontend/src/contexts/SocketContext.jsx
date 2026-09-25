@@ -26,6 +26,10 @@ export function SocketProvider({ children }) {
         return import.meta.env.VITE_API_URL.trim().replace(/\/+$/, '').replace(/\/api$/, '');
       }
 
+      if (import.meta.env.VITE_PUBLIC_BACKEND_URL) {
+        return import.meta.env.VITE_PUBLIC_BACKEND_URL.trim().replace(/\/+$/, '').replace(/\/api$/, '');
+      }
+
       // Khi chạy local hoặc LAN test máy chủ, proxy qua '/' của Vite
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
@@ -41,7 +45,7 @@ export function SocketProvider({ children }) {
       }
 
       // Khi chạy public (Internet, Netlify, Vercel, 4G/5G, mọi mạng ngoài), kết nối trực tiếp gateway Render
-      return 'https://grocery-pos-backend.onrender.com';
+      return 'https://grocery-store-ss76.onrender.com';
     };
 
     const socketEndpoint = getSocketEndpoint();

@@ -10,10 +10,10 @@ Hệ thống đã được cấu hình chế độ **Dual-Mode** thông minh, ch
 
 | Thành Phần | Dịch Vụ Lưu Trữ | Đường Dẫn Công Khai (Public Live Link) | Trạng Thái |
 |:---|:---|:---|:---|
-| **Frontend Web App (Netlify)** | Netlify Edge CDN | [https://grocery-pos-frontend.netlify.app](https://grocery-pos-frontend.netlify.app) | 🟢 Live / Sẵn sàng |
+| **Frontend Web App (Netlify)** | Netlify Edge CDN | [https://taphoasonhien.netlify.app](https://taphoasonhien.netlify.app) | 🟢 Live / Sẵn sàng |
 | **Frontend Web App (Vercel)** | Vercel Edge Global CDN | [https://grocery-store-app.vercel.app](https://grocery-store-app.vercel.app) | 🟢 Live / Sẵn sàng |
-| **Backend API Gateway** | Render Cloud Web Service | [https://grocery-pos-backend.onrender.com](https://grocery-pos-backend.onrender.com) | 🟢 Live / Sẵn sàng |
-| **Kiểm Tra Sức Khỏe API** | Render Cloud Web Service | [https://grocery-pos-backend.onrender.com/health](https://grocery-pos-backend.onrender.com/health) | 🟢 200 OK |
+| **Backend API Gateway** | Render Cloud Web Service | [https://grocery-store-ss76.onrender.com](https://grocery-store-ss76.onrender.com) | 🟢 Live / Sẵn sàng |
+| **Kiểm Tra Sức Khỏe API** | Render Cloud Web Service | [https://grocery-store-ss76.onrender.com/api/health](https://grocery-store-ss76.onrender.com/api/health) | 🟢 200 OK |
 | **Cơ Sở Dữ Liệu** | Neon Serverless PostgreSQL | Singapore AWS Region (`ap-southeast-1`) | ⚡ SSL Encrypted |
 
 ---

@@ -6,9 +6,10 @@ Chào mừng bạn đến với bộ tài liệu kỹ thuật chi tiết của h
 
 ## 🌐 Đường Dẫn Truy Cập Trực Tuyến (Public Cloud Live Links)
 
+- **Frontend Web App (Netlify)**: [https://taphoasonhien.netlify.app](https://taphoasonhien.netlify.app)
 - **Frontend Web App (Vercel)**: [https://grocery-store-app.vercel.app](https://grocery-store-app.vercel.app)
-- **Backend API Gateway (Render)**: [https://grocery-pos-backend.onrender.com](https://grocery-pos-backend.onrender.com)
-- **Kiểm Tra Sức Khỏe API**: [https://grocery-pos-backend.onrender.com/health](https://grocery-pos-backend.onrender.com/health)
+- **Backend API Gateway (Render)**: [https://grocery-store-ss76.onrender.com](https://grocery-store-ss76.onrender.com)
+- **Kiểm Tra Sức Khỏe API**: [https://grocery-store-ss76.onrender.com/api/health](https://grocery-store-ss76.onrender.com/api/health)
 - **Tài khoản dùng thử**: `admin` / `Admin@123` (Super Admin) & `nhanvien1` / `Admin@123` (Thu ngân)
 
 ---

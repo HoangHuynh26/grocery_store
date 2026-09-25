@@ -7,6 +7,12 @@
   publish = "dist"
   command = "npm run build"
 
+[build.environment]
+  VITE_API_URL = "https://grocery-store-ss76.onrender.com/api"
+  VITE_SOCKET_URL = "https://grocery-store-ss76.onrender.com"
+  VITE_PUBLIC_BACKEND_URL = "https://grocery-store-ss76.onrender.com"
+  VITE_PUBLIC_FRONTEND_URL = "https://taphoasonhien.netlify.app"
+
 # SPA Fallback: Chuyển hướng toàn bộ các route (/pos, /invoices, /orders, /ai-assistant) về /index.html với HTTP 200
 [[redirects]]
   from = "/*"

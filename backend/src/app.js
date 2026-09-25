@@ -28,6 +28,8 @@ app.use(cors({
       config.corsOrigin,
       process.env.CLIENT_URL,
       process.env.PUBLIC_FRONTEND_URL,
+      'https://taphoasonhien.netlify.app',
+      'https://grocery-store-ss76.onrender.com',
       'https://grocery-store-app.vercel.app',
       'https://grocery-pos-frontend.vercel.app',
       'https://grocery-pos-frontend.netlify.app',
