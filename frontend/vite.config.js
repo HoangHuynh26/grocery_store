@@ -13,11 +13,11 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://grocery-store-ss76.onrender.com',
         changeOrigin: true
       },
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: 'https://grocery-store-ss76.onrender.com',
         ws: true
       }
     }
