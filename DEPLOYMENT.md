@@ -56,8 +56,8 @@ Tài liệu hướng dẫn chi tiết từng bước đưa hệ thống **Grocer
    | `REFRESH_TOKEN_SECRET`| *(Bấm Generate hoặc điền chuỗi ngẫu nhiên 64 ký tự)* |
    | `CORS_ORIGIN` | `https://ten-du-an-cua-ban.vercel.app` *(hoặc tạm để `*`)* |
 6. Bấm **Deploy Web Service**.
-7. Khi Render build xong (khoảng 2 phút), bạn sẽ nhận được URL Backend (ví dụ: `https://grocery-pos-backend.onrender.com`).
-8. Kiểm tra: Mở trình duyệt truy cập `https://grocery-pos-backend.onrender.com/api/health` -> Nhận kết quả `{"status":"OK","database":"CONNECTED"}`.
+7. Khi Render build xong (khoảng 2 phút), bạn sẽ nhận được URL Backend (ví dụ: `https://grocery-store-ss76.onrender.com`).
+8. Kiểm tra: Mở trình duyệt truy cập `https://grocery-store-ss76.onrender.com/api/health` -> Nhận kết quả `{"status":"healthy","database":"CONNECTED"}`.
 
 ---
 
@@ -73,14 +73,14 @@ Tài liệu hướng dẫn chi tiết từng bước đưa hệ thống **Grocer
 5. **Environment Variables**:
    - Thêm biến `VITE_API_URL` với giá trị là URL Backend Render kèm `/api`:
      ```text
-     https://grocery-pos-backend.onrender.com/api
+     https://grocery-store-ss76.onrender.com/api
      ```
    - Thêm biến `VITE_SOCKET_URL` (nếu cần socket trực tiếp):
      ```text
-     https://grocery-pos-backend.onrender.com
+     https://grocery-store-ss76.onrender.com
      ```
 6. Bấm **Deploy**.
-7. Sau 1 phút, Vercel sẽ cấp tên miền HTTPS miễn phí (ví dụ: `https://grocery-store.vercel.app`).
+7. Sau 1 phút, Vercel sẽ cấp tên miền HTTPS miễn phí (ví dụ: `https://grocery-store-app.vercel.app`).
 
 ---
 
@@ -94,9 +94,9 @@ Tài liệu hướng dẫn chi tiết từng bước đưa hệ thống **Grocer
    - **Build command**: `npm run build`
    - **Publish directory**: `dist`
 5. **Environment Variables**:
-   - Thêm biến `VITE_API_URL` với giá trị là URL Backend Render:
+   - Tự động áp dụng từ `netlify.toml` hoặc thêm biến `VITE_API_URL`:
      ```text
-     https://grocery-pos-backend.onrender.com/api
+     https://grocery-store-ss76.onrender.com/api
      ```
 6. Bấm **Deploy grocery-store**.
 7. File `_redirects` và `netlify.toml` đã được tạo sẵn bảo đảm các route React Router (`/pos`, `/invoices`, `/ai-assistant`) không bao giờ bị lỗi 404 khi người dùng tải lại trang!

@@ -99,7 +99,7 @@ Hệ thống cung cấp sẵn file [database.sql](file:///c:/grocery_store/backe
 4. **Cấu hình Biến Môi Trường (Environment Variables)**:
    | Tên Biến Môi Trường | Giá Trị Mẫu | Mô Tả |
    |:---|:---|:---|
-   | `VITE_API_URL` | `https://grocery-pos-backend.onrender.com/api` | URL Backend Render (hỗ trợ có hoặc không có `/api`) |
+   | `VITE_API_URL` | `https://grocery-store-ss76.onrender.com/api` | URL Backend Render (hỗ trợ có hoặc không có `/api`) |
 5. Nhấn **Deploy**.
 
 ---
@@ -116,7 +116,7 @@ Hệ thống cung cấp sẵn file [database.sql](file:///c:/grocery_store/backe
 5. **Cấu hình Biến Môi Trường (Site configuration -> Environment variables)**:
    | Tên Biến Môi Trường | Giá Trị Mẫu | Mô Tả |
    |:---|:---|:---|
-   | `VITE_API_URL` | `https://grocery-pos-backend.onrender.com/api` | URL Backend Render |
+   | `VITE_API_URL` | `https://grocery-store-ss76.onrender.com/api` | URL Backend Render |
 6. Nhấn **Deploy grocery-store**.
 7. Hệ thống đã tích hợp sẵn file `frontend/public/_redirects` và `netlify.toml`, bảo đảm toàn bộ SPA routing không bao giờ bị lỗi 404 khi làm mới trang!
 
