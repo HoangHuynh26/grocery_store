@@ -247,11 +247,11 @@ export default function AdminsPage() {
                         </div>
                       ) : isLocal ? (
                         <span className="badge badge-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
-                          🏠 Nội bộ (Localhost / LAN)
+                          🌐 Cục bộ / Trực tiếp
                         </span>
                       ) : (
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          🌐 Ngoại mạng
+                          🌐 Trực tuyến (Internet)
                         </span>
                       )}
                     </td>

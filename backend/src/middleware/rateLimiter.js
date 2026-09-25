@@ -5,6 +5,7 @@ const loginLimiter = rateLimit({
   max: 15, // limit each IP to 15 login requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
   message: {
     success: false,
     error: {
@@ -19,6 +20,7 @@ const apiLimiter = rateLimit({
   max: 300, // limit each IP to 300 requests per minute
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
   message: {
     success: false,
     error: {

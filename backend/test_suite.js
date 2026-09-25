@@ -1,7 +1,7 @@
 // Automated Test Suite for Grocery Store Management System
 // Verifies: Auth, RBAC, Concurrency & Row Locking, Overselling Prevention, Idempotency, AI Assistant
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:5000/api';
 
 async function request(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint}`;

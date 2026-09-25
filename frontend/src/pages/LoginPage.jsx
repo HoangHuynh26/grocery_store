@@ -29,10 +29,10 @@ export default function LoginPage() {
         if (mounted) {
           setClientIpInfo({
             ip: '127.0.0.1',
-            locationText: 'Nội bộ cửa hàng (Localhost / LAN)',
-            city: 'Cửa hàng (LAN)',
+            locationText: 'Trực tuyến (Mở mọi mạng)',
+            city: 'Online (Mọi mạng)',
             country: 'Việt Nam',
-            flag: '🏠',
+            flag: '🌐',
             isLocal: true
           });
         }
@@ -126,7 +126,7 @@ export default function LoginPage() {
             <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>IP: {clientIpInfo.ip}</span>
             <span style={{ color: 'var(--border-color)' }}>|</span>
             <span style={{ color: 'var(--primary)', fontWeight: 600 }}>
-              {clientIpInfo.locationText || clientIpInfo.city || 'Khu vực nội bộ'}
+              {clientIpInfo.locationText || clientIpInfo.city || 'Trực tuyến (Mở mọi mạng)'}
             </span>
           </div>
         )}

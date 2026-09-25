@@ -26,16 +26,21 @@ export function SocketProvider({ children }) {
         return import.meta.env.VITE_API_URL.trim().replace(/\/+$/, '').replace(/\/api$/, '');
       }
 
-      // Khi chạy local, proxy qua '/' của Vite
+      // Khi chạy local hoặc LAN test máy chủ, proxy qua '/' của Vite
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
-        const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+        const isLocalhost = hostname === 'localhost' || 
+                            hostname === '127.0.0.1' || 
+                            hostname === '' || 
+                            /^192\.168\./.test(hostname) || 
+                            /^10\./.test(hostname) || 
+                            /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
         if (isLocalhost) {
           return '/';
         }
       }
 
-      // Khi chạy public, kết nối trực tiếp gateway Render
+      // Khi chạy public (Internet, Netlify, Vercel, 4G/5G, mọi mạng ngoài), kết nối trực tiếp gateway Render
       return 'https://grocery-pos-backend.onrender.com';
     };
 

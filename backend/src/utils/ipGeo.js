@@ -133,16 +133,16 @@ async function lookupIpLocation(ip) {
     return {
       ip: cleanIp,
       isLocal: true,
-      region: 'Khu vực nội bộ',
-      city: 'Cửa hàng (LAN)',
+      region: 'Trực tuyến',
+      city: 'Mọi mạng',
       country: 'Việt Nam',
-      locationText: 'Nội bộ cửa hàng (Localhost / LAN)',
-      flag: '🏠',
+      locationText: 'Trực tuyến (Mở mọi mạng)',
+      flag: '🌐',
       details: {
-        type: 'LAN',
+        type: 'OPEN_NETWORK',
         ip: cleanIp,
-        provider: 'Mạng cục bộ POS',
-        note: 'Máy trạm bán hàng nội bộ'
+        provider: 'Hệ thống POS Trực tuyến',
+        note: 'Sẵn sàng truy cập từ mọi mạng Internet, 4G/5G, WiFi & Cục bộ'
       }
     };
   }

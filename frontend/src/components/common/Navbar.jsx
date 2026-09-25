@@ -70,15 +70,15 @@ export default function Navbar({ onOpenQrScanner }) {
         {clientLocation && (
           <div
             className="apple-liquid-ip-pill"
-            title={`Địa chỉ IP: ${clientLocation.ip}\nKhu vực: ${clientLocation.locationText || 'Nội bộ cửa hàng'}`}
+            title={`Địa chỉ IP kết nối: ${clientLocation.ip}\nTrạng thái: Hoạt động trực tuyến (Sẵn sàng mở cho mọi mạng: Internet, 4G/5G, WiFi & Cục bộ)\nVị trí nhận diện: ${clientLocation.locationText || 'Trực tuyến'}`}
           >
             <span className="apple-pulse-dot" />
-            <span style={{ fontSize: '13px' }}>{clientLocation.flag || (clientLocation.isLocal ? '🏠' : '📍')}</span>
+            <span style={{ fontSize: '13px' }}>{clientLocation.flag || '🌐'}</span>
             <span className="show-desktop" style={{ fontWeight: 650, color: 'var(--primary)' }}>
-              {clientLocation.city || (clientLocation.isLocal ? 'Nội bộ' : 'Online')}
+              {clientLocation.city ? clientLocation.city : 'Online (Mọi mạng)'}
             </span>
             <span className="hide-desktop" style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '11px' }}>
-              {clientLocation.isLocal ? 'LAN' : 'Net'}
+              Online
             </span>
             <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 500 }} className="show-desktop">
               ({clientLocation.ip})

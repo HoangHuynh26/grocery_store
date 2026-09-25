@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: '0.0.0.0', // Lắng nghe trên mọi giao diện mạng (Localhost, WiFi, LAN, 4G qua hotspot/router)
     port: 5173,
     watch: {
       usePolling: true,

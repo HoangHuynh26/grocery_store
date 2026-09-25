@@ -11,6 +11,9 @@ const { apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
+// Trust reverse proxy (Render, Vercel, Netlify, Cloudflare) for accurate client IP detection across all public networks
+app.set('trust proxy', true);
+
 // Security HTTP headers
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
